@@ -1,12 +1,91 @@
-export type Role = "org_admin" | "org_manager" | "supplier_user";
-export type QuestionType = "short_text" | "long_text" | "yes_no" | "single_choice" | "multiple_choice" | "number" | "date" | "rating" | "file";
-export type Operator = "equals" | "not_equals" | "contains" | "greater_than" | "less_than";
-export type Condition = { dependsOn: string; operator: Operator; value: string | number | boolean };
-export type Question = { id: string; title: string; description?: string; type: QuestionType; required: boolean; options: string[]; position: number; condition?: Condition };
-export type Questionnaire = { id: string; title: string; description: string; status: "draft" | "published"; version: number; questions: Question[]; updatedAt: string };
-export type Supplier = { id: string; name: string; contact: string; email: string; status: "active" | "inactive"; products: string[] };
-export type Product = { id: string; name: string; category: string; sku: string };
-export type AssignmentStatus = "pending" | "in_progress" | "submitted" | "overdue";
-export type Assignment = { id: string; questionnaireId: string; questionnaireTitle: string; supplierId: string; supplierName: string; productId: string; productName: string; deadline: string; status: AssignmentStatus; createdAt: string; response?: Record<string, unknown>; questionnaireVersion?: number; questions?: Question[] };
-export type Notification = { id: string; title: string; message: string; createdAt: string; read: boolean; assignmentId?: string };
-export type AppData = { suppliers: Supplier[]; products: Product[]; questionnaires: Questionnaire[]; assignments: Assignment[]; notifications: Notification[] };
+export type Role = "org_admin" | "org_manager" | "supplier_user" | "unknown";
+export type QuestionType =
+  | "short_text"
+  | "long_text"
+  | "yes_no"
+  | "single_choice"
+  | "multiple_choice"
+  | "number"
+  | "date"
+  | "rating"
+  | "file";
+export type Operator =
+  | "equals"
+  | "not_equals"
+  | "contains"
+  | "greater_than"
+  | "less_than";
+export type Condition = {
+  dependsOn: string;
+  operator: Operator;
+  value: string | number | boolean;
+};
+export type Question = {
+  id: string;
+  title: string;
+  description?: string;
+  type: QuestionType;
+  required: boolean;
+  options: string[];
+  position: number;
+  condition?: Condition;
+};
+export type Questionnaire = {
+  id: string;
+  title: string;
+  description: string;
+  status: "draft" | "published";
+  version: number;
+  questions: Question[];
+  updatedAt: string;
+};
+export type Supplier = {
+  id: string;
+  name: string;
+  contact: string;
+  email: string;
+  status: "active" | "inactive";
+  products: string[];
+};
+export type Product = {
+  id: string;
+  name: string;
+  category: string;
+  sku: string;
+};
+export type AssignmentStatus =
+  | "pending"
+  | "in_progress"
+  | "submitted"
+  | "overdue";
+export type Assignment = {
+  id: string;
+  questionnaireId: string;
+  questionnaireTitle: string;
+  supplierId: string;
+  supplierName: string;
+  productId: string;
+  productName: string;
+  deadline: string;
+  status: AssignmentStatus;
+  createdAt: string;
+  response?: Record<string, unknown>;
+  questionnaireVersion?: number;
+  questions?: Question[];
+  submittedAt?: string | null;
+};
+export type Notification = {
+  id: string;
+  title: string;
+  message: string;
+  createdAt: string;
+  read: boolean;
+  assignmentId?: string;
+};
+export type AppData = {
+  suppliers: Supplier[];
+  products: Product[];
+  questionnaires: Questionnaire[];
+  assignments: Assignment[];
+  notifications: Notification[];
+};
