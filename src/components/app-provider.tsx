@@ -181,6 +181,7 @@ async function loadWorkspace(supabase: any, role: Role): Promise<AppData> {
       deadline: a.deadline,
       status: a.status,
       createdAt: a.created_at,
+      submittedAt: response?.submitted_at ?? null,
       ...(response ? { response: answers } : {}),
     };
   });
@@ -244,7 +245,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (authError) {
         if (authError.name === "AuthSessionMissingError") {
           setUserId(null);
-          setRole(null);
+          setRoleState("unknown");
           setSupplierId(null);
           return;
         }
@@ -254,7 +255,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       if (!user) {
         setUserId(null);
-        setRole(null);
+        setRoleState("unknown");
         setSupplierId(null);
         return;
       }
@@ -346,6 +347,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }));
       return;
     }
+
+    updateSupplier: (
+      id: string,
+      input: {
+        name: string;
+        contact: string;
+        email: string;
+        status: "active" | "inactive";
+      },
+    ) => Promise<void>;
+
+    updateProduct: (
+      id: string,
+      input: {
+        name: string;
+        category: string;
+        sku: string;
+      },
+    ) => Promise<void>;
+
+    assignProductToSupplier: (supplierId: string, productId: string) =>
+      Promise<void>;
+
+    removeProductFromSupplier: (supplierId: string, productId: string) =>
+      Promise<void>;
+
     const { data: profile, error: pe } = await supabase
       .from("profiles")
       .select("organization_id")
@@ -414,6 +441,125 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
     await refresh();
   };
+
+  const updateSupplier = async (
+    id: string,
+    input: {
+      name: string;
+      contact: string;
+      email: string;
+      status: "active" | "inactive";
+    },
+  ) => {
+    if (!supabase) {
+      setData((d) => ({
+        ...d,
+        suppliers: d.suppliers.map((s) =>
+          s.id === id ? { ...s, ...input } : s,
+        ),
+      }));
+      return;
+    }
+
+    const { error } = await supabase
+      .from("suppliers")
+      .update({
+        name: input.name,
+        contact_name: input.contact,
+        email: input.email,
+        status: input.status,
+      })
+      .eq("id", id);
+
+    if (error) throw error;
+    await refresh();
+  };
+
+  const updateProduct = async (
+    id: string,
+    input: {
+      name: string;
+      category: string;
+      sku: string;
+    },
+  ) => {
+    if (!supabase) {
+      setData((d) => ({
+        ...d,
+        products: d.products.map((p) => (p.id === id ? { ...p, ...input } : p)),
+      }));
+      return;
+    }
+
+    const { error } = await supabase
+      .from("products")
+      .update(input)
+      .eq("id", id);
+
+    if (error) throw error;
+    await refresh();
+  };
+
+  const assignProductToSupplier = async (
+    supplierId: string,
+    productId: string,
+  ) => {
+    if (!supabase) {
+      setData((d) => ({
+        ...d,
+        suppliers: d.suppliers.map((s) =>
+          s.id === supplierId && !s.products.includes(productId)
+            ? { ...s, products: [...s.products, productId] }
+            : s,
+        ),
+      }));
+      return;
+    }
+
+    const { error } = await supabase.from("supplier_products").upsert(
+      {
+        supplier_id: supplierId,
+        product_id: productId,
+      },
+      {
+        onConflict: "supplier_id,product_id",
+        ignoreDuplicates: true,
+      },
+    );
+
+    if (error) throw error;
+    await refresh();
+  };
+
+  const removeProductFromSupplier = async (
+    supplierId: string,
+    productId: string,
+  ) => {
+    if (!supabase) {
+      setData((d) => ({
+        ...d,
+        suppliers: d.suppliers.map((s) =>
+          s.id === supplierId
+            ? {
+                ...s,
+                products: s.products.filter((id) => id !== productId),
+              }
+            : s,
+        ),
+      }));
+      return;
+    }
+
+    const { error } = await supabase
+      .from("supplier_products")
+      .delete()
+      .eq("supplier_id", supplierId)
+      .eq("product_id", productId);
+
+    if (error) throw error;
+    await refresh();
+  };
+
   const addQuestionnaire = async (q: Questionnaire) => {
     if (!supabase) {
       setData((d) => ({ ...d, questionnaires: [q, ...d.questionnaires] }));
@@ -777,6 +923,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       signOut,
       addSupplier,
       addProduct,
+      updateSupplier,
+      updateProduct,
+      assignProductToSupplier,
+      removeProductFromSupplier,
       addQuestionnaire,
       updateQuestionnaire,
       createAssignment,
@@ -801,6 +951,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       createAssignment,
       saveResponse,
       markNotificationRead,
+      updateSupplier,
+      updateProduct,
+      assignProductToSupplier,
+      removeProductFromSupplier,
     ],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
