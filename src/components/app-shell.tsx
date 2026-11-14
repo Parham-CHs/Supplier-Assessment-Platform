@@ -1,0 +1,3 @@
+"use client";
+import {Sidebar} from "./sidebar";import {Topbar} from "./topbar";import {useApp} from "./app-provider";import {usePathname,useRouter} from "next/navigation";import {useEffect} from "react";
+export function AppShell({children}:{children:React.ReactNode}){const {role}=useApp();const path=usePathname();const router=useRouter();useEffect(()=>{if(role==="supplier_user"&&!path.startsWith("/supplier")&&path!=="/notifications")router.replace("/supplier");if(role!=="supplier_user"&&path.startsWith("/supplier"))router.replace("/dashboard");},[role,path,router]);return <div><Sidebar/><div className="min-h-screen lg:pl-64"><Topbar/><main className="mx-auto max-w-[1500px] px-5 py-7 lg:px-8">{children}</main></div></div>}
