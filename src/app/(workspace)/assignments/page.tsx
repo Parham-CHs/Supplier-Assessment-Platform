@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -36,9 +35,7 @@ export default function Assignments() {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
 
-  const selectedQ = data.questionnaires.find(
-    (q) => q.id === questionnaireId,
-  );
+  const selectedQ = data.questionnaires.find((q) => q.id === questionnaireId);
 
   const selectedAssignment = data.assignments.find(
     (a) => a.id === selectedAssignmentId,
@@ -47,9 +44,7 @@ export default function Assignments() {
   // Products belonging to at least one selected supplier
   const availableProducts = data.products.filter((p) =>
     supplierIds.some((sid) =>
-      data.suppliers
-        .find((s) => s.id === sid)
-        ?.products.includes(p.id),
+      data.suppliers.find((s) => s.id === sid)?.products.includes(p.id),
     ),
   );
 
@@ -58,16 +53,8 @@ export default function Assignments() {
     availableProducts.some((p) => p.id === id),
   );
 
-  const toggle = (
-    arr: string[],
-    id: string,
-    set: (v: string[]) => void,
-  ) => {
-    set(
-      arr.includes(id)
-        ? arr.filter((x) => x !== id)
-        : [...arr, id],
-    );
+  const toggle = (arr: string[], id: string, set: (v: string[]) => void) => {
+    set(arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]);
   };
 
   const send = async () => {
@@ -77,7 +64,9 @@ export default function Assignments() {
       !validProductIds.length ||
       !deadline
     ) {
-      setMessage("Please select a questionnaire, suppliers, products, and deadline.");
+      setMessage(
+        "Please select a questionnaire, suppliers, products, and deadline.",
+      );
       return;
     }
 
@@ -98,9 +87,7 @@ export default function Assignments() {
       setP([]);
     } catch (e) {
       setMessage(
-        e instanceof Error
-          ? e.message
-          : "Could not create assignments.",
+        e instanceof Error ? e.message : "Could not create assignments.",
       );
     } finally {
       setSending(false);
@@ -115,13 +102,11 @@ export default function Assignments() {
       />
 
       <div className="grid gap-5 xl:grid-cols-[380px_1fr]">
-
         {/* CREATE ASSIGNMENT */}
         <Card>
           <h2 className="mb-4 font-bold">Create assignment</h2>
 
           <div className="space-y-4">
-
             {/* Questionnaire */}
             <div>
               <Label>Questionnaire</Label>
@@ -175,7 +160,6 @@ export default function Assignments() {
               <Label>Products</Label>
 
               <div className="max-h-40 space-y-2 overflow-auto rounded-xl border border-line p-3">
-
                 {!supplierIds.length ? (
                   <p className="text-xs text-muted">
                     Select suppliers first to see their available products.
@@ -235,9 +219,7 @@ export default function Assignments() {
             </Button>
 
             {message && (
-              <p className="text-xs font-medium text-emerald-700">
-                {message}
-              </p>
+              <p className="text-xs font-medium text-emerald-700">{message}</p>
             )}
           </div>
         </Card>
@@ -257,99 +239,101 @@ export default function Assignments() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[680px] text-left text-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[800px] table-fixed text-sm">
+                <colgroup>
+                  <col className="w-[14%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[25%]" />
+                  <col className="w-[16%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[20%]" />
+                </colgroup>
 
-              <thead className="text-xs text-muted">
-                <tr>
-                  <th className="pb-3">Supplier</th>
-                  <th className="pb-3">Product</th>
-                  <th className="pb-3">Questionnaire</th>
-                  <th className="pb-3">Deadline</th>
-                  <th className="pb-3">Status</th>
-                  <th className="pb-3">Actions</th>
-                </tr>
-              </thead>
+                <thead className="text-xs text-muted">
+                  <tr>
+                    <th className="pb-3 text-left">Supplier</th>
+                    <th className="pb-3 text-left">Product</th>
+                    <th className="pb-3 text-left">Questionnaire</th>
+                    <th className="pb-3 text-left">Deadline</th>
+                    <th className="pb-3 text-left">Status</th>
+                    <th className="pb-3 text-center">      Actions</th>
+                  </tr>
+                </thead>
 
-              <tbody>
-                {data.assignments.map((a) => (
-                  <tr
-                    key={a.id}
-                    className="border-t border-line"
-                  >
-                    <td className="py-3 font-semibold">
-                      {a.supplierName}
-                    </td>
+                <tbody>
+                  {data.assignments.map((a) => (
+                    <tr key={a.id} className="border-t border-line">
+                      <td className="py-4 pr-2 font-semibold">
+                        {a.supplierName}
+                      </td>
 
-                    <td className="py-3">
-                      {a.productName}
-                    </td>
+                      <td className="py-4 pr-2">{a.productName}</td>
 
-                    <td className="py-3 text-muted">
-                      {a.questionnaireTitle}
-                    </td>
+                      <td className="py-4 pr-2 text-muted">
+                        {a.questionnaireTitle}
+                      </td>
 
-                    <td className="py-3 text-muted">
-                      {formatDate(a.deadline)}
-                    </td>
+                      <td className="py-4 pr-2 text-muted">
+                        {formatDate(a.deadline)}
+                      </td>
 
-                    <td className="py-3">
-                      <Badge
-                        tone={
-                          a.status === "submitted"
-                            ? "green"
-                            : a.status === "overdue"
-                              ? "red"
-                              : a.status === "in_progress"
-                                ? "blue"
-                                : "yellow"
-                        }
-                      >
-                        {a.status.replace("_", " ")}
-                      </Badge>
-                    </td>
-
-                    <td className="py-3">
-                      {a.status === "submitted" && (
-                        <Button
-                          onClick={() =>
-                            setSelectedAssignmentId(
-                              selectedAssignmentId === a.id
-                                ? null
-                                : a.id,
-                            )
+                      <td className="py-4 pr-2">
+                        <Badge
+                          tone={
+                            a.status === "submitted"
+                              ? "green"
+                              : a.status === "overdue"
+                                ? "red"
+                                : a.status === "in_progress"
+                                  ? "blue"
+                                  : "yellow"
                           }
                         >
-                          <Eye size={15} />
-                          View answers
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                          {a.status.replace("_", " ")}
+                        </Badge>
+                      </td>
 
-                {data.assignments.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="py-8 text-center text-sm text-muted"
-                    >
-                      No assignments have been created yet.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                      <td className="py-4 text-left">
+                        {a.status === "submitted" && (
+                          <div className="flex justify-center">
+                            <Button
+                              onClick={() =>
+                                setSelectedAssignmentId(
+                                  selectedAssignmentId === a.id ? null : a.id,
+                                )
+                              }
+                            >
+                              <Eye size={15} />
+                              View answers
+                            </Button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+
+                  {data.assignments.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="py-10 text-center text-sm text-muted"
+                      >
+                        No assignments have been created yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* SUPPLIER ANSWERS - OUTSIDE THE TABLE */}
           {selectedAssignment && (
             <div className="mt-6 rounded-xl border border-line p-5">
-
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <h3 className="font-bold">
-                    Supplier Answers
-                  </h3>
+                  <h3 className="font-bold">Supplier Answers</h3>
 
                   <p className="mt-1 text-sm text-muted">
                     {selectedAssignment.supplierName} ·{" "}
@@ -357,55 +341,47 @@ export default function Assignments() {
                   </p>
                 </div>
 
-                <Button
-                  onClick={() => setSelectedAssignmentId(null)}
-                >
+                <Button onClick={() => setSelectedAssignmentId(null)}>
                   Close
                 </Button>
               </div>
 
               <div className="space-y-4">
+                {(selectedAssignment.questions ?? []).map((question, index) => {
+                  const answer = selectedAssignment.response?.[question.id];
 
-                {(selectedAssignment.questions ?? []).map(
-                  (question, index) => {
-                    const answer =
-                      selectedAssignment.response?.[question.id];
+                  return (
+                    <div
+                      key={question.id}
+                      className="rounded-lg bg-surface p-4"
+                    >
+                      <p className="mb-2 text-sm font-semibold">
+                        {index + 1}. {question.title}
+                      </p>
 
-                    return (
-                      <div
-                        key={question.id}
-                        className="rounded-lg bg-surface p-4"
-                      >
-                        <p className="mb-2 text-sm font-semibold">
-                          {index + 1}. {question.title}
-                        </p>
-
-                        <p className="whitespace-pre-wrap text-sm text-muted">
-                          {answer === undefined ||
-                          answer === null ||
-                          answer === ""
-                            ? "No answer provided"
-                            : Array.isArray(answer)
-                              ? answer.join(", ")
-                              : typeof answer === "object"
-                                ? JSON.stringify(answer)
-                                : String(answer)}
-                        </p>
-                      </div>
-                    );
-                  },
-                )}
+                      <p className="whitespace-pre-wrap text-sm text-muted">
+                        {answer === undefined ||
+                        answer === null ||
+                        answer === ""
+                          ? "No answer provided"
+                          : Array.isArray(answer)
+                            ? answer.join(", ")
+                            : typeof answer === "object"
+                              ? JSON.stringify(answer)
+                              : String(answer)}
+                      </p>
+                    </div>
+                  );
+                })}
 
                 {!selectedAssignment.questions?.length && (
                   <p className="text-sm text-muted">
                     No question details found for this assignment.
                   </p>
                 )}
-
               </div>
             </div>
           )}
-
         </Card>
       </div>
     </>
