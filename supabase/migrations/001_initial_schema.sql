@@ -171,8 +171,26 @@ create trigger responses_guard before insert or update on public.responses
 for each row execute function public.guard_supplier_response();
 
 -- Keep supplier-side writes scoped to draft/in-progress work; RLS remains the primary boundary.
-create policy "supplier cannot delete submitted response" on public.responses for delete
-using (public.current_app_role() <> 'supplier_user' or status <> 'submitted');
+
+
+
+
+-- create policy "supplier cannot delete submitted response" on public.responses for delete
+-- using (public.current_app_role() <> 'supplier_user' or status <> 'submitted');
+drop policy if exists "supplier cannot delete submitted response"
+on public.responses;
+
+create policy "supplier cannot delete submitted response"
+on public.responses for delete
+using (
+    public.current_app_role() <> 'supplier_user'
+    or status <> 'submitted'
+);
+
+
+
+
+
 
 
 create or replace function public.guard_supplier_answer() returns trigger

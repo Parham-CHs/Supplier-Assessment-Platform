@@ -45,6 +45,10 @@ begin
   end if;
   return false;
 end; $$;
+
+
+
+
 create or replace function public.guard_supplier_response() returns trigger
 language plpgsql security definer set search_path=public as $$
 declare assignment_supplier uuid; existing_status text; target_assignment uuid;
@@ -65,7 +69,8 @@ begin
   end if;
   return new;
 end; $$;
-create trigger responses_guard before insert or update on public.responses for each row execute function public.guard_supplier_response();
+
+-- create trigger responses_guard before insert or update on public.responses for each row execute function public.guard_supplier_response();
 
 create or replace function public.guard_supplier_answer() returns trigger
 language plpgsql security definer set search_path=public as $$
@@ -82,7 +87,18 @@ begin
   if public.current_app_role()='supplier_user' and response_status='submitted' then raise exception 'Submitted answers cannot be changed.'; end if;
   if tg_op='DELETE' then return old; else return new; end if;
 end; $$;
-create trigger answers_guard before insert or update or delete on public.answers for each row execute function public.guard_supplier_answer();
+
+-- create trigger answers_guard before insert or update or delete on public.answers for each row execute function public.guard_supplier_answer();
+
+
+
+
+
+
+
+
+
+
 
 -- Prevent assignments from pairing a supplier and product that are not linked within the same organization.
 
