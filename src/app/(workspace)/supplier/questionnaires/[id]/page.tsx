@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo, useState } from "react";
@@ -16,7 +15,7 @@ import { ArrowLeft, Save, Send, ChevronLeft, ChevronRight } from "lucide-react";
 type SectionCondition = {
   dependsOn: string;
   operator: string;
-  value: string | number;
+  value: string | number | boolean;
 };
 
 function matchesCondition(
@@ -71,14 +70,11 @@ export default function AnswerQuestionnaire() {
     baseQuestionnaire && assignment
       ? {
           ...baseQuestionnaire,
-          version:
-            assignment.questionnaireVersion ?? baseQuestionnaire.version,
-          displayMode:
-            assignment.displayMode ?? baseQuestionnaire.displayMode,
-          sections:
-            assignment.sections?.length
-              ? assignment.sections
-              : baseQuestionnaire.sections,
+          version: assignment.questionnaireVersion ?? baseQuestionnaire.version,
+          displayMode: assignment.displayMode ?? baseQuestionnaire.displayMode,
+          sections: assignment.sections?.length
+            ? assignment.sections
+            : baseQuestionnaire.sections,
           questions: assignment.questions?.length
             ? assignment.questions
             : baseQuestionnaire.questions,
@@ -93,9 +89,7 @@ export default function AnswerQuestionnaire() {
 
   const visible = useMemo(
     () =>
-      questionnaire
-        ? visibleQuestions(questionnaire.questions, answers)
-        : [],
+      questionnaire ? visibleQuestions(questionnaire.questions, answers) : [],
     [questionnaire, answers],
   );
 
@@ -219,8 +213,7 @@ export default function AnswerQuestionnaire() {
 
         <div>
           <h3 className="text-sm font-semibold">
-            {q.title}{" "}
-            {q.required && <span className="text-red-500">*</span>}
+            {q.title} {q.required && <span className="text-red-500">*</span>}
           </h3>
 
           {q.description && (
@@ -234,6 +227,7 @@ export default function AnswerQuestionnaire() {
           question={q}
           value={answers[q.id]}
           onChange={(value) => update(q.id, value)}
+          disabled={submitted}
         />
       </div>
     </div>
@@ -301,10 +295,7 @@ export default function AnswerQuestionnaire() {
                 Section {safeStep + 1} of {visibleSections.length}
               </span>
               <span>
-                {Math.round(
-                  ((safeStep + 1) / visibleSections.length) * 100,
-                )}
-                %
+                {Math.round(((safeStep + 1) / visibleSections.length) * 100)}%
               </span>
             </div>
 
@@ -312,9 +303,7 @@ export default function AnswerQuestionnaire() {
               <div
                 className="h-full rounded-full bg-brand transition-all"
                 style={{
-                  width: `${
-                    ((safeStep + 1) / visibleSections.length) * 100
-                  }%`,
+                  width: `${((safeStep + 1) / visibleSections.length) * 100}%`,
                 }}
               />
             </div>
@@ -326,9 +315,7 @@ export default function AnswerQuestionnaire() {
             activeSection ? (
               <section>
                 <div className="mb-5 border-b border-line pb-4">
-                  <h3 className="text-lg font-bold">
-                    {activeSection.title}
-                  </h3>
+                  <h3 className="text-lg font-bold">{activeSection.title}</h3>
 
                   {activeSection.description && (
                     <p className="mt-1 text-sm text-muted">
@@ -399,7 +386,7 @@ export default function AnswerQuestionnaire() {
           </p>
         )}
 
-        {!submitted && (
+        {(stepByStep || !submitted) && (
           <div className="mt-7 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
             {stepByStep ? (
               <Button
@@ -418,29 +405,48 @@ export default function AnswerQuestionnaire() {
             )}
 
             <div className="flex flex-wrap justify-end gap-2">
-              <Button variant="secondary" onClick={() => save(false)}>
-                <Save size={16} />
-                Save draft
-              </Button>
+              {!submitted && (
+                <>
+                  <Button variant="secondary" onClick={() => save(false)}>
+                    <Save size={16} />
+                    Save draft
+                  </Button>
 
-              {stepByStep && safeStep < visibleSections.length - 1 ? (
-                <Button
-                  onClick={() => {
-                    setCurrentStep((step) =>
-                      Math.min(step + 1, visibleSections.length - 1),
-                    );
-                    setError("");
-                  }}
-                >
-                  Next
-                  <ChevronRight size={16} />
-                </Button>
-              ) : (
-                <Button onClick={() => save(true)}>
-                  <Send size={16} />
-                  Submit response
-                </Button>
+                  {stepByStep && safeStep < visibleSections.length - 1 ? (
+                    <Button
+                      onClick={() => {
+                        setCurrentStep((step) =>
+                          Math.min(step + 1, visibleSections.length - 1),
+                        );
+                        setError("");
+                      }}
+                    >
+                      Next
+                      <ChevronRight size={16} />
+                    </Button>
+                  ) : (
+                    <Button onClick={() => save(true)}>
+                      <Send size={16} />
+                      Submit response
+                    </Button>
+                  )}
+                </>
               )}
+
+              {submitted &&
+                stepByStep &&
+                safeStep < visibleSections.length - 1 && (
+                  <Button
+                    onClick={() =>
+                      setCurrentStep((step) =>
+                        Math.min(step + 1, visibleSections.length - 1),
+                      )
+                    }
+                  >
+                    Next
+                    <ChevronRight size={16} />
+                  </Button>
+                )}
             </div>
           </div>
         )}

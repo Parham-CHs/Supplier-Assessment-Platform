@@ -1,2 +1,153 @@
-"use client";import type {Question} from "@/lib/types";import {Input,Textarea} from "@/components/ui";
-export function QuestionField({question,value,onChange}:{question:Question;value:unknown;onChange:(v:unknown)=>void}){const val=value??"";switch(question.type){case "short_text":return <Input value={String(val)} onChange={e=>onChange(e.target.value)} placeholder="Type your answer..."/>;case "long_text":return <Textarea rows={4} value={String(val)} onChange={e=>onChange(e.target.value)} placeholder="Write your answer..."/>;case "yes_no":return <div className="flex gap-3">{["yes","no"].map(v=><button type="button" key={v} onClick={()=>onChange(v)} className={`rounded-xl border px-5 py-2.5 text-sm font-semibold capitalize ${val===v?"border-brand bg-brand-soft text-brand":"border-line bg-white text-muted"}`}>{v}</button>)}</div>;case "single_choice":return <div className="grid gap-2 sm:grid-cols-2">{question.options.map(v=><label key={v} className={`flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-sm ${val===v?"border-brand bg-brand-soft":"border-line"}`}><input type="radio" checked={val===v} onChange={()=>onChange(v)}/>{v}</label>)}</div>;case "multiple_choice":{const values=Array.isArray(val)?val as string[]:[];return <div className="grid gap-2 sm:grid-cols-2">{question.options.map(v=><label key={v} className="flex cursor-pointer items-center gap-2 rounded-xl border border-line p-3 text-sm"><input type="checkbox" checked={values.includes(v)} onChange={e=>onChange(e.target.checked?[...values,v]:values.filter(x=>x!==v))}/>{v}</label>)}</div>}case "number":return <Input type="number" value={String(val)} onChange={e=>onChange(e.target.value===""?"":Number(e.target.value))} placeholder="Enter a number"/>;case "date":return <Input type="date" value={String(val)} onChange={e=>onChange(e.target.value)}/>;case "rating":return <div className="flex gap-2">{[1,2,3,4,5].map(n=><button type="button" key={n} onClick={()=>onChange(n)} className={`h-10 w-10 rounded-xl border text-sm font-bold ${val===n?"border-brand bg-brand text-white":"border-line bg-white text-muted"}`}>{n}</button>)}</div>;case "file":return <div><Input type="file" accept=".pdf,.png,.jpg,.jpeg" onChange={e=>onChange(e.target.files?.[0]?.name??"")}/><p className="mt-1 text-xs text-muted">Demo mode stores the selected filename. Configure Supabase Storage for real uploads.</p></div>;default:return null;}}
+"use client";
+import type { Question } from "@/lib/types";
+import { Input, Textarea } from "@/components/ui";
+export function QuestionField({
+  question,
+  value,
+  onChange,
+  disabled,
+}: {
+  question: Question;
+  value: unknown;
+  onChange: (v: unknown) => void;
+  disabled?: boolean;
+}) {
+  const val = value ?? "";
+  switch (question.type) {
+    case "short_text":
+      return (
+        <Input
+          value={String(val)}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Type your answer..."
+          disabled={disabled}
+        />
+      );
+    case "long_text":
+      return (
+        <Textarea
+          rows={4}
+          value={String(val)}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Write your answer..."
+          disabled={disabled}
+        />
+      );
+    case "yes_no":
+      return (
+        <div className="flex gap-3">
+          {["yes", "no"].map((v) => (
+            <button
+              type="button"
+              key={v}
+              onClick={() => onChange(v)}
+              className={`rounded-xl border px-5 py-2.5 text-sm font-semibold capitalize ${val === v ? "border-brand bg-brand-soft text-brand" : "border-line bg-white text-muted"}`}
+              disabled={disabled}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+      );
+    case "single_choice":
+      return (
+        <div className="grid gap-2 sm:grid-cols-2">
+          {question.options.map((v) => (
+            <label
+              key={v}
+              className={`flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-sm ${val === v ? "border-brand bg-brand-soft" : "border-line"}`}
+            >
+              <input
+                type="radio"
+                checked={val === v}
+                onChange={() => onChange(v)}
+                disabled={disabled}
+              />
+              {v}
+            </label>
+          ))}
+        </div>
+      );
+    case "multiple_choice": {
+      const values = Array.isArray(val) ? (val as string[]) : [];
+      return (
+        <div className="grid gap-2 sm:grid-cols-2">
+          {question.options.map((v) => (
+            <label
+              key={v}
+              className="flex cursor-pointer items-center gap-2 rounded-xl border border-line p-3 text-sm"
+            >
+              <input
+                type="checkbox"
+                checked={values.includes(v)}
+                onChange={(e) =>
+                  onChange(
+                    e.target.checked
+                      ? [...values, v]
+                      : values.filter((x) => x !== v),
+                  )
+                }
+                disabled={disabled}
+              />
+              {v}
+            </label>
+          ))}
+        </div>
+      );
+    }
+    case "number":
+      return (
+        <Input
+          type="number"
+          value={String(val)}
+          onChange={(e) =>
+            onChange(e.target.value === "" ? "" : Number(e.target.value))
+          }
+          placeholder="Enter a number"
+          disabled={disabled}
+        />
+      );
+    case "date":
+      return (
+        <Input
+          type="date"
+          value={String(val)}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
+        />
+      );
+    case "rating":
+      return (
+        <div className="flex gap-2">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <button
+              type="button"
+              key={n}
+              onClick={() => onChange(n)}
+              className={`h-10 w-10 rounded-xl border text-sm font-bold ${val === n ? "border-brand bg-brand text-white" : "border-line bg-white text-muted"}`}
+              disabled={disabled}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      );
+    case "file":
+      return (
+        <div>
+          <Input
+            type="file"
+            accept=".pdf,.png,.jpg,.jpeg"
+            onChange={(e) => onChange(e.target.files?.[0]?.name ?? "")}
+            disabled={disabled}
+          />
+          <p className="mt-1 text-xs text-muted">
+            Demo mode stores the selected filename. Configure Supabase Storage
+            for real uploads.
+          </p>
+        </div>
+      );
+    default:
+      return null;
+  }
+}
