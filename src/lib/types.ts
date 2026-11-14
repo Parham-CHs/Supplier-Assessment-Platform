@@ -20,6 +20,17 @@ export type Condition = {
   operator: Operator;
   value: string | number | boolean;
 };
+// export type Question = {
+//   id: string;
+//   title: string;
+//   description?: string;
+//   type: QuestionType;
+//   required: boolean;
+//   options: string[];
+//   position: number;
+//   condition?: Condition;
+// };
+
 export type Question = {
   id: string;
   title: string;
@@ -28,17 +39,32 @@ export type Question = {
   required: boolean;
   options: string[];
   position: number;
+  sectionId: string;
   condition?: Condition;
 };
+
+// export type Questionnaire = {
+//   id: string;
+//   title: string;
+//   description: string;
+//   status: "draft" | "published";
+//   version: number;
+//   questions: Question[];
+//   updatedAt: string;
+// };
+
 export type Questionnaire = {
   id: string;
   title: string;
   description: string;
   status: "draft" | "published";
   version: number;
+  displayMode: DisplayMode;
+  sections: QuestionnaireSection[];
   questions: Question[];
   updatedAt: string;
 };
+
 export type Supplier = {
   id: string;
   name: string;
@@ -73,6 +99,8 @@ export type Assignment = {
   questionnaireVersion?: number;
   questions?: Question[];
   submittedAt?: string | null;
+  displayMode: DisplayMode;
+  sections: QuestionnaireSection[];
 };
 export type Notification = {
   id: string;
@@ -88,4 +116,21 @@ export type AppData = {
   questionnaires: Questionnaire[];
   assignments: Assignment[];
   notifications: Notification[];
+};
+
+export type DisplayMode = "single_page" | "step_by_step";
+
+export type QuestionnaireSection = {
+  id: string;
+  title: string;
+  description?: string;
+  position: number;
+  condition?: Condition;
+};
+
+
+export type CookieToSet = {
+  name: string;
+  value: string;
+  options?: any;
 };
