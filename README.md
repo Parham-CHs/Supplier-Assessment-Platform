@@ -1,8 +1,8 @@
 # SupplyScope — Supplier Assessment Platform
 
-A Next.js + TypeScript supplier questionnaire and assessment MVP. It demonstrates organization and supplier workspaces, product/supplier relationships, a conditional questionnaire builder, assignments, supplier submissions, notifications and analytics.
+Next.js 15 + TypeScript supplier questionnaire and assessment application. It includes organization and supplier workspaces, supplier/product relationships, conditional questionnaires, assignments, supplier submissions, notifications and analytics.
 
-## Quick start (demo mode)
+## Run locally
 
 Requirements: Node.js 20.9+ and npm.
 
@@ -12,68 +12,36 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open http://localhost:3000. Choose Organization or Supplier demo access on the welcome screen. Changes are persisted in browser `localStorage`.
+Without Supabase credentials, the app opens in local demo mode and stores demo state in browser `localStorage`. To use real accounts and shared database state, configure Supabase as described in [`supabase/SETUP.md`](supabase/SETUP.md).
 
-### Switch roles
+## Supabase integration
 
-Use the **View as** selector in the top bar:
-- Organization admin — organization workspace.
-- Organization manager — organization workspace.
-- Supplier user — supplier portal (demo supplier: Samsung Electronics / Minji Park).
+- Supabase Auth email/password sign-in with cookie-backed sessions via `@supabase/ssr`.
+- Middleware refreshes the session and redirects unauthenticated users to `/login`.
+- `public.profiles` determines the role and organization/supplier scope; users cannot select their own role in the UI.
+- Workspace reads and writes use the browser Supabase client and are restricted by PostgreSQL RLS.
+- Questionnaire versions are preserved when editing a published questionnaire; assignments retain their original version and question snapshot.
+- Supplier response drafts and submissions, assignment status changes and in-app notifications are stored in PostgreSQL.
+- Database triggers validate supplier/product/questionnaire organization scope, required visible answers, question/version matching and immutability after submission.
 
-This role switcher is for demonstrating the UI only. It is not authentication or a security boundary.
+See [`supabase/SETUP.md`](supabase/SETUP.md) for migrations, first-admin provisioning, supplier setup and permission tests.
 
-## Supabase setup
+## Roles
 
-1. Create a Supabase project.
-2. In SQL Editor, run `supabase/migrations/001_initial_schema.sql`.
-3. Create an organization, supplier records and product records; connect supplier/product rows.
-4. Create Supabase Auth users and matching `profiles` rows. Organization users need `organization_id`; supplier users need `supplier_id`.
-5. Copy Project URL and anon/publishable key into `.env.local`:
+- `org_admin`: organization workspace access.
+- `org_manager`: organization workspace access.
+- `supplier_user`: access to assignments and data for the supplier linked to their profile.
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
-```
+The demo role switcher is only available when Supabase is not configured. In Supabase mode, role and scope come from the authenticated user's `profiles` row and database RLS policies.
 
-The SQL migration includes the relational schema, questionnaire version snapshots, answers as JSONB, notification records and starter RLS policies, including supplier read access scoped to assigned questionnaire versions. The UI in this MVP currently uses the local demo data adapter; the Supabase schema and client are included as the backend integration foundation. Before using real accounts, wire page data/actions to Supabase queries and verify every RLS policy using separate organization and supplier accounts. Do not treat demo role switching as production auth.
+## Included features
 
-## Features
+- Supplier directory and product catalog with many-to-many supplier/product links.
+- Questionnaire builder with nine question types and conditional visibility.
+- Assignments for supplier/product combinations and deadlines.
+- Supplier response drafts, required-field validation and final submission.
+- In-app notifications and analytics dashboards.
 
-- Role-aware organization and supplier navigation.
-- Supplier directory and product catalog with many-to-many supplier/product relationships.
-- Questionnaire builder with nine question types: short text, long text, yes/no, single choice, multiple choice, number, date, rating and file.
-- Conditional visibility with equals, not-equals, contains, greater-than and less-than operators.
-- Conditions can refer to earlier questions; hidden answers are pruned when a parent answer changes.
-- Assignment creation for supplier/product combinations and due dates.
-- In-app notification records and read state.
-- Supplier response experience with draft save, required-field validation and submission.
-- Analytics for completion, supplier performance and yes/no answer distribution.
-- Questionnaire versions represented in the SQL schema; published questionnaires are read-only in the demo UI.
+## Not yet connected
 
-## Important demo limitations
-
-- Demo mode is local to one browser and is not shared between users/devices.
-- Demo file questions store the filename only. Configure Supabase Storage and upload validation for real files.
-- Supplier portal demo identity is Samsung. The demo role selector is not a substitute for server-side authorization.
-- Email delivery, automated reminders, PDF/Excel exports, and production-grade version cloning are not included.
-- The schema is a solid starting point, but production deployment requires connecting the UI to Supabase and testing RLS thoroughly.
-
-## Commands
-
-```bash
-npm run dev       # local development
-npm run typecheck # TypeScript check
-npm run build     # production build
-npm start         # run production build
-```
-
-## Suggested production hardening
-
-- Use `@supabase/ssr` with middleware/cookie-based auth and server-side session validation.
-- Move all writes to server actions or route handlers and enforce role/supplier scope on the server.
-- Validate submitted answer values against the assigned questionnaire version on the server; never trust client visibility alone.
-- Add private Storage bucket policies and signed upload URLs for evidence documents.
-- Add immutable questionnaire version snapshots at publish time.
-- Add email notifications via a provider such as Resend and scheduled deadline reminders.
-- Add audit logs for questionnaire publication, assignment and submission changes.
+Supplier/product creation is connected; edit/archive workflows, supplier-user invitation management, email notifications, private Storage uploads for evidence files, and production deployment hardening remain follow-up work. The current environment could not download npm packages during integration, so run `npm install`, `npm run typecheck` and `npm run build` locally before submission.

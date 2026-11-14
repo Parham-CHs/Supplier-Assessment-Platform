@@ -7,6 +7,6 @@ export type Questionnaire = { id: string; title: string; description: string; st
 export type Supplier = { id: string; name: string; contact: string; email: string; status: "active" | "inactive"; products: string[] };
 export type Product = { id: string; name: string; category: string; sku: string };
 export type AssignmentStatus = "pending" | "in_progress" | "submitted" | "overdue";
-export type Assignment = { id: string; questionnaireId: string; questionnaireTitle: string; supplierId: string; supplierName: string; productId: string; productName: string; deadline: string; status: AssignmentStatus; createdAt: string; response?: Record<string, unknown> };
+export type Assignment = { id: string; questionnaireId: string; questionnaireTitle: string; supplierId: string; supplierName: string; productId: string; productName: string; deadline: string; status: AssignmentStatus; createdAt: string; response?: Record<string, unknown>; questionnaireVersion?: number; questions?: Question[] };
 export type Notification = { id: string; title: string; message: string; createdAt: string; read: boolean; assignmentId?: string };
 export type AppData = { suppliers: Supplier[]; products: Product[]; questionnaires: Questionnaire[]; assignments: Assignment[]; notifications: Notification[] };
