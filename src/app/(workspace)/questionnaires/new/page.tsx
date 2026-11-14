@@ -1,4 +1,4 @@
-"use client"; import { useId, useState } from "react"; import { useRouter } from "next/navigation"; import { useApp } from "@/components/app-provider"; import { Button, Card, Input, Label, Select, Textarea, Badge } from "@/components/ui"; import type { Question, QuestionType, Questionnaire, Operator } from "@/lib/types"; import { Plus, Trash2, ArrowLeft, GitBranch, Save } from "lucide-react"; import Link from "next/link";
+"use client"; import { useId, useState } from "react"; import { useRouter } from "next/navigation"; import { useApp } from "@/components/app-provider"; import { Button, Card, Input, Label, Select, Textarea, Badge } from "@/components/ui"; import type { Question, QuestionType, Questionnaire, Operator } from "@/lib/types"; import { generateId } from "@/lib/utils"; import { Plus, Trash2, ArrowLeft, GitBranch, Save } from "lucide-react"; import Link from "next/link";
 const types: { value: QuestionType; label: string }[] = [{ value: "short_text", label: "Short text" }, { value: "long_text", label: "Long text" }, { value: "yes_no", label: "Yes / No" }, { value: "single_choice", label: "Single choice" }, { value: "multiple_choice", label: "Multiple choice" }, { value: "number", label: "Number" }, { value: "date", label: "Date" }, { value: "rating", label: "Rating (1–5)" }, { value: "file", label: "File upload" }];
 export default function NewQuestionnaire() {
     const { data, addQuestionnaire } = useApp();
@@ -8,7 +8,6 @@ export default function NewQuestionnaire() {
     const initialQuestionId = useId();
     const [questions, setQuestions] = useState<Question[]>([
         {
-            // id: crypto.randomUUID(),
             id: initialQuestionId,
             title: "Does your product have a valid certification?",
             type: "yes_no",
@@ -20,10 +19,10 @@ export default function NewQuestionnaire() {
     const [saving, setSaving] = useState(false);
     const [saveError, setSaveError] = useState("");
     const update = (id: string, patch: Partial<Question>) => setQuestions(qs => qs.map(q => q.id === id ? { ...q, ...patch } : q));
-    const add = () => setQuestions(qs => [...qs, { id: crypto.randomUUID(), title: "New question", type: "short_text", required: false, options: [], position: qs.length + 1 }]);
+    const add = () => setQuestions(qs => [...qs, { id: generateId(), title: "New question", type: "short_text", required: false, options: [], position: qs.length + 1 }]);
     const save = async (publish: boolean) => {
         if (!title.trim() || !questions.length) return; setSaving(true); setSaveError("");
-        const q: Questionnaire = { id: crypto.randomUUID(), title, description, status: publish ? "published" : "draft", version: 1, questions: questions.map((q, i) => ({ ...q, position: i + 1 })), updatedAt: new Date().toISOString() }; try { await addQuestionnaire(q); router.push("/questionnaires"); } catch (e) { setSaveError(e instanceof Error ? e.message : "Could not save questionnaire."); } finally { setSaving(false); }
+        const q: Questionnaire = { id: generateId(), title, description, status: publish ? "published" : "draft", version: 1, questions: questions.map((q, i) => ({ ...q, position: i + 1 })), updatedAt: new Date().toISOString() }; try { await addQuestionnaire(q); router.push("/questionnaires"); } catch (e) { setSaveError(e instanceof Error ? e.message : "Could not save questionnaire."); } finally { setSaving(false); }
     };
     return <>
         <div className="mb-5">
