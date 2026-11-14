@@ -1,11 +1,11 @@
-"use client"; import { useId, useState } from "react"; import { useRouter } from "next/navigation"; import { useApp } from "@/components/app-provider"; import { Button, Card, Input, Label, Select, Textarea, Badge } from "@/components/ui"; import type { Question, QuestionType, Questionnaire, Operator } from "@/lib/types"; import { generateId } from "@/lib/utils"; import { Plus, Trash2, ArrowLeft, GitBranch, Save } from "lucide-react"; import Link from "next/link";
+"use client"; import { useState } from "react"; import { useRouter } from "next/navigation"; import { useApp } from "@/components/app-provider"; import { Button, Card, Input, Label, Select, Textarea, Badge } from "@/components/ui"; import type { Question, QuestionType, Questionnaire, Operator } from "@/lib/types"; import { generateId } from "@/lib/utils"; import { Plus, Trash2, ArrowLeft, GitBranch, Save } from "lucide-react"; import Link from "next/link";
 const types: { value: QuestionType; label: string }[] = [{ value: "short_text", label: "Short text" }, { value: "long_text", label: "Long text" }, { value: "yes_no", label: "Yes / No" }, { value: "single_choice", label: "Single choice" }, { value: "multiple_choice", label: "Multiple choice" }, { value: "number", label: "Number" }, { value: "date", label: "Date" }, { value: "rating", label: "Rating (1–5)" }, { value: "file", label: "File upload" }];
 export default function NewQuestionnaire() {
     const { data, addQuestionnaire } = useApp();
     const router = useRouter();
     const [title, setTitle] = useState("New supplier assessment");
     const [description, setDescription] = useState("");
-    const initialQuestionId = useId();
+    const initialQuestionId = generateId();
     const [questions, setQuestions] = useState<Question[]>([
         {
             id: initialQuestionId,
