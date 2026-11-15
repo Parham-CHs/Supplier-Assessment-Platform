@@ -138,6 +138,9 @@ export default function AnswerQuestionnaire() {
   const [openingFileQuestionId, setOpeningFileQuestionId] = useState<
     string | null
   >(null);
+  const [downloadingFileQuestionId, setDownloadingFileQuestionId] = useState<
+    string | null
+  >(null);
   const [filePreview, setFilePreview] = useState<{
     url: string;
     name: string;
@@ -255,6 +258,42 @@ export default function AnswerQuestionnaire() {
     }
   };
 
+  const downloadUploadedFile = async (questionId: string, value: unknown) => {
+    if (typeof value !== "object" || value === null || !("path" in value)) {
+      return;
+    }
+    const file = value as { path: string; name?: string };
+    if (typeof file.path !== "string") return;
+
+    setDownloadingFileQuestionId(questionId);
+    setError("");
+    try {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) throw new Error("Supabase Storage is not configured.");
+
+      const fileName = file.name ?? "uploaded-file";
+      const { data: signedFile, error: signedUrlError } = await supabase.storage
+        .from("supplier-evidence")
+        .createSignedUrl(file.path, 60, { download: fileName });
+      if (signedUrlError) throw signedUrlError;
+
+      const link = document.createElement("a");
+      link.href = signedFile.signedUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (downloadError) {
+      setError(
+        downloadError instanceof Error
+          ? downloadError.message
+          : "Could not download this file.",
+      );
+    } finally {
+      setDownloadingFileQuestionId(null);
+    }
+  };
+
   const save = async (submit: boolean) => {
     if (uploadingQuestionId) {
       setError("Wait for the file upload to finish before saving.");
@@ -339,8 +378,12 @@ export default function AnswerQuestionnaire() {
           onChange={(value) => update(q.id, value)}
           onFileSelect={(file) => attachFile(q.id, file)}
           onFileView={(value) => void viewUploadedFile(q.id, value)}
+          onFileDownload={(value) =>
+            void downloadUploadedFile(q.id, value)
+          }
           fileUploading={uploadingQuestionId === q.id}
           fileOpening={openingFileQuestionId === q.id}
+          fileDownloading={downloadingFileQuestionId === q.id}
           disabled={submitted}
         />
       </div>

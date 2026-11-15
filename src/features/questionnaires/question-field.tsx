@@ -1,15 +1,17 @@
 "use client";
 import type { Question } from "@/lib/types";
 import { Input, Textarea } from "@/components/ui";
-import { Eye } from "lucide-react";
+import { Download, Eye } from "lucide-react";
 export function QuestionField({
   question,
   value,
   onChange,
   onFileSelect,
   onFileView,
+  onFileDownload,
   fileUploading = false,
   fileOpening = false,
+  fileDownloading = false,
   disabled,
 }: {
   question: Question;
@@ -17,8 +19,10 @@ export function QuestionField({
   onChange: (v: unknown) => void;
   onFileSelect?: (file: File) => Promise<void>;
   onFileView?: (value: unknown) => void;
+  onFileDownload?: (value: unknown) => void;
   fileUploading?: boolean;
   fileOpening?: boolean;
+  fileDownloading?: boolean;
   disabled?: boolean;
 }) {
   const val = value ?? "";
@@ -174,17 +178,33 @@ export function QuestionField({
           ) : fileName ? (
             <div className="mt-1 flex items-center justify-between gap-2">
               <p className="truncate text-xs text-muted">Attached: {fileName}</p>
-              {hasUploadedFile && onFileView && (
-                <button
-                  type="button"
-                  aria-label="View uploaded file"
-                  title="View uploaded file"
-                  onClick={() => onFileView(val)}
-                  disabled={fileOpening}
-                  className="shrink-0 rounded-lg p-2 text-muted hover:bg-gray-100 disabled:opacity-50"
-                >
-                  <Eye size={16} />
-                </button>
+              {hasUploadedFile && (onFileView || onFileDownload) && (
+                <div className="flex shrink-0 items-center">
+                  {onFileView && (
+                    <button
+                      type="button"
+                      aria-label="View uploaded file"
+                      title="View uploaded file"
+                      onClick={() => onFileView(val)}
+                      disabled={fileOpening}
+                      className="rounded-lg p-2 text-muted hover:bg-gray-100 disabled:opacity-50"
+                    >
+                      <Eye size={16} />
+                    </button>
+                  )}
+                  {onFileDownload && (
+                    <button
+                      type="button"
+                      aria-label="Download uploaded file"
+                      title="Download uploaded file"
+                      onClick={() => onFileDownload(val)}
+                      disabled={fileDownloading}
+                      className="rounded-lg p-2 text-muted hover:bg-gray-100 disabled:opacity-50"
+                    >
+                      <Download size={16} />
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           ) : null}

@@ -11,7 +11,7 @@ import {
   Badge,
   Input,
 } from "@/components/ui";
-import { Send, Eye, X } from "lucide-react";
+import { Send, Eye, X, Download } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import type { UploadedFileAnswer } from "@/lib/types";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -46,6 +46,9 @@ export default function Assignments() {
   const [sending, setSending] = useState(false);
   const [fileError, setFileError] = useState("");
   const [openingFileQuestionId, setOpeningFileQuestionId] = useState<
+    string | null
+  >(null);
+  const [downloadingFileQuestionId, setDownloadingFileQuestionId] = useState<
     string | null
   >(null);
   const [filePreview, setFilePreview] = useState<{
@@ -96,6 +99,36 @@ export default function Assignments() {
       );
     } finally {
       setOpeningFileQuestionId(null);
+    }
+  };
+
+  const downloadFile = async (questionId: string, answer: unknown) => {
+    const file = getUploadedFileAnswer(answer);
+    if (!file) return;
+
+    setDownloadingFileQuestionId(questionId);
+    setFileError("");
+    try {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) throw new Error("Supabase Storage is not configured.");
+
+      const { data: signedFile, error: signedUrlError } = await supabase.storage
+        .from("supplier-evidence")
+        .createSignedUrl(file.path, 60, { download: file.name });
+      if (signedUrlError) throw signedUrlError;
+
+      const link = document.createElement("a");
+      link.href = signedFile.signedUrl;
+      link.download = file.name;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      setFileError(
+        error instanceof Error ? error.message : "Could not download this file.",
+      );
+    } finally {
+      setDownloadingFileQuestionId(null);
     }
   };
 
@@ -413,18 +446,34 @@ export default function Assignments() {
                             <p className="truncate text-sm text-muted">
                               {fileAnswer.name}
                             </p>
-                            <Button
-                              variant="secondary"
-                              onClick={() =>
-                                void viewFile(question.id, fileAnswer)
-                              }
-                              disabled={openingFileQuestionId === question.id}
-                            >
-                              <Eye size={15} />
-                              {openingFileQuestionId === question.id
-                                ? "Opening…"
-                                : "View file"}
-                            </Button>
+                            <div className="flex items-center">
+                              <Button
+                                variant="secondary"
+                                onClick={() =>
+                                  void viewFile(question.id, fileAnswer)
+                                }
+                                disabled={openingFileQuestionId === question.id}
+                              >
+                                <Eye size={15} />
+                                {openingFileQuestionId === question.id
+                                  ? "Opening…"
+                                  : "View file"}
+                              </Button>
+                              <button
+                                type="button"
+                                aria-label={`Download ${fileAnswer.name}`}
+                                title="Download file"
+                                onClick={() =>
+                                  void downloadFile(question.id, fileAnswer)
+                                }
+                                disabled={
+                                  downloadingFileQuestionId === question.id
+                                }
+                                className="rounded-lg p-2 text-muted hover:bg-gray-100 disabled:opacity-50"
+                              >
+                                <Download size={17} />
+                              </button>
+                            </div>
                           </div>
                         ) : (
                           <p className="whitespace-pre-wrap text-sm text-muted">
