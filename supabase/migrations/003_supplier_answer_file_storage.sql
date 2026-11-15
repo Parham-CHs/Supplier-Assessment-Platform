@@ -15,8 +15,8 @@ with check (
     from public.assignments a
     join public.questions q
       on q.questionnaire_version_id = a.questionnaire_version_id
-    where a.id::text = (storage.foldername(name))[1]
-      and q.id::text = (storage.foldername(name))[2]
+    where a.id::text = (storage.foldername(storage.objects.name))[1]
+      and q.id::text = (storage.foldername(storage.objects.name))[2]
       and q.question_type = 'file'
       and a.supplier_id = public.current_supplier_id()
       and a.status in ('pending', 'in_progress')
@@ -34,8 +34,8 @@ using (
     join public.suppliers s on s.id = a.supplier_id
     join public.questions q
       on q.questionnaire_version_id = a.questionnaire_version_id
-    where a.id::text = (storage.foldername(name))[1]
-      and q.id::text = (storage.foldername(name))[2]
+    where a.id::text = (storage.foldername(storage.objects.name))[1]
+      and q.id::text = (storage.foldername(storage.objects.name))[2]
       and q.question_type = 'file'
       and (
         a.supplier_id = public.current_supplier_id()

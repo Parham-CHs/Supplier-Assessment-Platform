@@ -11,7 +11,7 @@ import {
   Badge,
   Input,
 } from "@/components/ui";
-import { Send, Eye, ExternalLink } from "lucide-react";
+import { Send, Eye, X } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import type { UploadedFileAnswer } from "@/lib/types";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -48,6 +48,10 @@ export default function Assignments() {
   const [openingFileQuestionId, setOpeningFileQuestionId] = useState<
     string | null
   >(null);
+  const [filePreview, setFilePreview] = useState<{
+    url: string;
+    name: string;
+  } | null>(null);
 
   const selectedQ = data.questionnaires.find((q) => q.id === questionnaireId);
 
@@ -75,12 +79,6 @@ export default function Assignments() {
     const file = getUploadedFileAnswer(answer);
     if (!file) return;
 
-    const preview = window.open("about:blank", "_blank");
-    if (!preview) {
-      setFileError("Allow pop-ups to open supplier attachments.");
-      return;
-    }
-    preview.opener = null;
     setOpeningFileQuestionId(questionId);
     setFileError("");
     try {
@@ -91,9 +89,8 @@ export default function Assignments() {
         .from("supplier-evidence")
         .createSignedUrl(file.path, 60);
       if (signedUrlError) throw signedUrlError;
-      preview.location.href = signedFile.signedUrl;
+      setFilePreview({ url: signedFile.signedUrl, name: file.name });
     } catch (error) {
-      preview.close();
       setFileError(
         error instanceof Error ? error.message : "Could not open this file.",
       );
@@ -423,7 +420,7 @@ export default function Assignments() {
                               }
                               disabled={openingFileQuestionId === question.id}
                             >
-                              <ExternalLink size={15} />
+                              <Eye size={15} />
                               {openingFileQuestionId === question.id
                                 ? "Opening…"
                                 : "View file"}
@@ -463,6 +460,42 @@ export default function Assignments() {
           )}
         </Card>
       </div>
+
+      {filePreview && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setFilePreview(null);
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Preview ${filePreview.name}`}
+            className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-xl"
+          >
+            <header className="flex items-center justify-between gap-4 border-b border-line px-5 py-3">
+              <h2 className="truncate text-sm font-semibold">
+                {filePreview.name}
+              </h2>
+              <button
+                type="button"
+                aria-label="Close file preview"
+                onClick={() => setFilePreview(null)}
+                className="rounded-lg p-2 text-muted hover:bg-gray-100"
+              >
+                <X size={18} />
+              </button>
+            </header>
+            <iframe
+              src={filePreview.url}
+              title={filePreview.name}
+              className="h-[75vh] w-full bg-gray-100"
+            />
+          </section>
+        </div>
+      )}
     </>
   );
 }
