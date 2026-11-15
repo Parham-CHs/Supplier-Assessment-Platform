@@ -403,25 +403,44 @@ export default function Assignments() {
             </div>
           </div>
 
-          {/* SUPPLIER ANSWERS - OUTSIDE THE TABLE */}
           {selectedAssignment && (
-            <div className="mt-6 rounded-xl border border-line p-5">
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold">Supplier Answers</h3>
+            <div
+              className="fixed inset-0 z-40 grid place-items-center bg-black/50 p-4"
+              role="presentation"
+              onMouseDown={(event) => {
+                if (event.target === event.currentTarget) {
+                  setSelectedAssignmentId(null);
+                }
+              }}
+            >
+              <section
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="supplier-answers-title"
+                className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-white shadow-xl"
+              >
+                <header className="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
+                  <div>
+                    <h3 id="supplier-answers-title" className="font-bold">
+                      Supplier Answers
+                    </h3>
+                    <p className="mt-1 text-sm text-muted">
+                      {selectedAssignment.supplierName} ·{" "}
+                      {selectedAssignment.productName}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="Close supplier answers"
+                    title="Close"
+                    onClick={() => setSelectedAssignmentId(null)}
+                    className="rounded-lg p-2 text-muted hover:bg-gray-100"
+                  >
+                    <X size={18} />
+                  </button>
+                </header>
 
-                  <p className="mt-1 text-sm text-muted">
-                    {selectedAssignment.supplierName} ·{" "}
-                    {selectedAssignment.productName}
-                  </p>
-                </div>
-
-                <Button onClick={() => setSelectedAssignmentId(null)}>
-                  Close
-                </Button>
-              </div>
-
-              <div className="space-y-4">
+                <div className="min-h-0 space-y-4 overflow-y-auto p-5">
                 {fileError && (
                   <p role="alert" className="text-sm text-red-700">
                     {fileError}
@@ -504,7 +523,8 @@ export default function Assignments() {
                     No question details found for this assignment.
                   </p>
                 )}
-              </div>
+                </div>
+              </section>
             </div>
           )}
         </Card>
