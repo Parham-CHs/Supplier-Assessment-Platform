@@ -24,6 +24,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (loading) return;
 
+    if (mode === "supabase" && !error && role === "unknown") {
+      router.replace("/login");
+      return;
+    }
+
     if (
       mode === "supabase" &&
       !error &&
@@ -63,6 +68,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             applied.
           </p>
         </div>
+      </div>
+    );
+
+  if (mode === "supabase" && !loading && role === "unknown")
+    return (
+      <div className="grid min-h-screen place-items-center text-sm text-muted">
+        Redirecting to sign in…
       </div>
     );
 
