@@ -22,7 +22,7 @@ export async function middleware(request: NextRequest) {
   const isLogin = request.nextUrl.pathname === "/login";
   const isWorkspace = request.nextUrl.pathname !== "/" && !isLogin;
   if (!user && isWorkspace) {
-    const target = request.nextUrl.clone(); target.pathname = "/login"; target.searchParams.set("next", request.nextUrl.pathname);
+    const target = request.nextUrl.clone(); target.pathname = "/login"; target.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(target);
   }
   if (user && isLogin) {

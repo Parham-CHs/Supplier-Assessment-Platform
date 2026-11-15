@@ -1,3 +1,70 @@
 "use client";
-import Link from "next/link";import {Bell,Building2,LogOut} from "lucide-react";import {useApp} from "./app-provider";import {initials} from "@/lib/utils";import {Button} from "./ui";
-export function Topbar(){const {role,userName,data,mode,signOut}=useApp();const unread=data.notifications.filter(n=>!n.read).length;return <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-line bg-white/90 px-5 backdrop-blur lg:px-8"><div className="flex items-center gap-2 text-sm text-muted"><Building2 size={17}/><span>Workspace</span><span className="text-gray-300">/</span><span className="font-semibold text-ink">{role==="supplier_user"?"Supplier portal":"Organization"}</span></div><div className="flex items-center gap-3"><span className="hidden rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 sm:inline">{mode==="demo"?"Demo mode":"Live · Supabase"}</span><Link href="/notifications" aria-label="Notifications" className="relative rounded-xl p-2 text-muted hover:bg-gray-100"><Bell size={19}/>{unread>0&&<span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500"/>}</Link><div className="hidden h-8 w-px bg-line sm:block"/><div className="hidden text-right sm:block"><div className="text-xs font-semibold">{userName}</div><div className="text-[10px] text-muted">{role.replace("_"," ")}</div></div><div className="grid h-9 w-9 place-items-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">{initials(userName)}</div><Button variant="ghost" onClick={()=>void signOut()}><LogOut size={16}/><span className="hidden sm:inline">Sign out</span></Button></div></header>}
+
+import { useState } from "react";
+import Link from "next/link";
+import { Bell, Building2, LogOut } from "lucide-react";
+import { useApp } from "./app-provider";
+import { initials } from "@/lib/utils";
+import { Button } from "./ui";
+
+export function Topbar() {
+	const { role, userName, data, mode, signOut } = useApp();
+	const [signOutError, setSignOutError] = useState("");
+	const unread = data.notifications.filter((notification) => !notification.read).length;
+
+	async function handleSignOut() {
+		setSignOutError("");
+		try {
+			await signOut();
+		} catch (error) {
+			setSignOutError(
+				error instanceof Error ? error.message : "Unable to sign out. Please try again.",
+			);
+		}
+	}
+
+	return (
+		<header className="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-line bg-white/90 px-5 backdrop-blur lg:px-8">
+			<div className="flex items-center gap-2 text-sm text-muted">
+				<Building2 size={17} />
+				<span>Workspace</span>
+				<span className="text-gray-300">/</span>
+				<span className="font-semibold text-ink">
+					{role === "supplier_user" ? "Supplier portal" : "Organization"}
+				</span>
+			</div>
+			<div className="flex items-center gap-3">
+				{signOutError && (
+					<span role="alert" className="max-w-48 text-xs text-red-700">
+						{signOutError}
+					</span>
+				)}
+				<span className="hidden rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 sm:inline">
+					{mode === "demo" ? "Demo mode" : "Live · Supabase"}
+				</span>
+				<Link
+					href="/notifications"
+					aria-label="Notifications"
+					className="relative rounded-xl p-2 text-muted hover:bg-gray-100"
+				>
+					<Bell size={19} />
+					{unread > 0 && (
+						<span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" />
+					)}
+				</Link>
+				<div className="hidden h-8 w-px bg-line sm:block" />
+				<div className="hidden text-right sm:block">
+					<div className="text-xs font-semibold">{userName}</div>
+					<div className="text-[10px] text-muted">{role.replace("_", " ")}</div>
+				</div>
+				<div className="grid h-9 w-9 place-items-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">
+					{initials(userName)}
+				</div>
+				<Button variant="ghost" onClick={() => void handleSignOut()}>
+					<LogOut size={16} />
+					<span className="hidden sm:inline">Sign out</span>
+				</Button>
+			</div>
+		</header>
+	);
+}

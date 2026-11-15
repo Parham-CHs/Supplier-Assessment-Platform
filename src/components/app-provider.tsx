@@ -499,9 +499,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
   const signOut = async () => {
-    if (supabase) await supabase.auth.signOut();
+    if (supabase) {
+      const { error: signOutError } = await supabase.auth.signOut();
+      if (signOutError) throw signOutError;
+    }
     setUserId(null);
     setSupplierId(null);
+    setRoleState("unknown");
+    setUserName("Demo User");
+    setUserEmail("");
     router.replace("/login");
     router.refresh();
   };

@@ -17,6 +17,19 @@ import {
   isSupabaseConfigured,
 } from "@/lib/supabase/client";
 
+function getSafeNextPath() {
+  const next = new URLSearchParams(window.location.search).get("next");
+  if (!next?.startsWith("/") || next.startsWith("//")) return null;
+
+  try {
+    const target = new URL(next, window.location.origin);
+    if (target.origin !== window.location.origin) return null;
+    return `${target.pathname}${target.search}${target.hash}`;
+  } catch {
+    return null;
+  }
+}
+
 export default function Login() {
   const router = useRouter();
   const { setRole } = useApp();
@@ -36,57 +49,53 @@ export default function Login() {
       setLoading(false);
       return;
     }
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (authError) {
-      setError(authError.message);
-      setLoading(false);
-      return;
-    }
+    try {
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (authError) {
+        setError(authError.message);
+        return;
+      }
 
-    
-    // const { data: profile, error: profileError } = await supabase
-    //   .from("profiles")
-    //   .select("role")
-    //   .single();
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
-    if (userError || !user) {
-      throw new Error("Could not retrieve authenticated user.");
-    }
+      if (userError || !user) {
+        throw userError ?? new Error("Could not retrieve authenticated user.");
+      }
 
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle();
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
 
-    if (profileError || !profile) {
-      await supabase.auth.signOut();
-      throw new Error(
-        profileError?.message ||
-          "No SupplyScope profile is linked to this account.",
+      if (profileError || !profile) {
+        await supabase.auth.signOut();
+        throw new Error(
+          profileError?.message ||
+            "No SupplyScope profile is linked to this account. Ask an administrator to provision your profile.",
+        );
+      }
+
+      router.replace(
+        getSafeNextPath() ??
+          (profile.role === "supplier_user" ? "/supplier" : "/dashboard"),
       );
-    }
-
-
-    if (profileError || !profile) {
-      await supabase.auth.signOut();
+      router.refresh();
+    } catch (authError) {
       setError(
-        "Your account is signed in, but no SupplyScope profile is linked. Ask an administrator to provision your profile.",
+        authError instanceof Error
+          ? authError.message
+          : "Unable to sign in. Please try again.",
       );
+    } finally {
       setLoading(false);
-      return;
     }
-    router.replace(
-      profile.role === "supplier_user" ? "/supplier" : "/dashboard",
-    );
-    router.refresh();
   }
   const enterDemo = (role: Role) => {
     setRole(role);
