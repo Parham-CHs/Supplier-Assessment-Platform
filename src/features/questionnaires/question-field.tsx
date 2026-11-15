@@ -1,19 +1,24 @@
 "use client";
 import type { Question } from "@/lib/types";
 import { Input, Textarea } from "@/components/ui";
+import { Eye } from "lucide-react";
 export function QuestionField({
   question,
   value,
   onChange,
   onFileSelect,
+  onFileView,
   fileUploading = false,
+  fileOpening = false,
   disabled,
 }: {
   question: Question;
   value: unknown;
   onChange: (v: unknown) => void;
   onFileSelect?: (file: File) => Promise<void>;
+  onFileView?: (value: unknown) => void;
   fileUploading?: boolean;
+  fileOpening?: boolean;
   disabled?: boolean;
 }) {
   const val = value ?? "";
@@ -143,6 +148,11 @@ export function QuestionField({
           : typeof val === "object" && val !== null && "name" in val
             ? String(val.name)
             : "";
+      const hasUploadedFile =
+        typeof val === "object" &&
+        val !== null &&
+        "path" in val &&
+        typeof val.path === "string";
       return (
         <div>
           <Input
@@ -162,9 +172,21 @@ export function QuestionField({
               Uploading file…
             </p>
           ) : fileName ? (
-            <p className="mt-1 truncate text-xs text-muted">
-              Attached: {fileName}
-            </p>
+            <div className="mt-1 flex items-center justify-between gap-2">
+              <p className="truncate text-xs text-muted">Attached: {fileName}</p>
+              {hasUploadedFile && onFileView && (
+                <button
+                  type="button"
+                  aria-label="View uploaded file"
+                  title="View uploaded file"
+                  onClick={() => onFileView(val)}
+                  disabled={fileOpening}
+                  className="shrink-0 rounded-lg p-2 text-muted hover:bg-gray-100 disabled:opacity-50"
+                >
+                  <Eye size={16} />
+                </button>
+              )}
+            </div>
           ) : null}
           <p className="mt-1 text-xs text-muted">
             PDF, PNG, or JPEG, up to 10 MB. Demo mode stores only the filename.

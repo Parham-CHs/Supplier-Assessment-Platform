@@ -10,7 +10,8 @@ import {
   pruneHiddenAnswers,
   visibleQuestions,
 } from "@/features/questionnaires/condition";
-import { ArrowLeft, Save, Send, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Save, Send, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type SectionCondition = {
   logic: "and" | "or";
@@ -134,6 +135,13 @@ export default function AnswerQuestionnaire() {
   const [uploadingQuestionId, setUploadingQuestionId] = useState<string | null>(
     null,
   );
+  const [openingFileQuestionId, setOpeningFileQuestionId] = useState<
+    string | null
+  >(null);
+  const [filePreview, setFilePreview] = useState<{
+    url: string;
+    name: string;
+  } | null>(null);
 
   const visible = useMemo(
     () =>
@@ -212,6 +220,38 @@ export default function AnswerQuestionnaire() {
       );
     } finally {
       setUploadingQuestionId(null);
+    }
+  };
+
+  const viewUploadedFile = async (questionId: string, value: unknown) => {
+    if (typeof value !== "object" || value === null || !("path" in value)) {
+      return;
+    }
+    const file = value as { path: string; name?: string };
+    if (typeof file.path !== "string") return;
+
+    setOpeningFileQuestionId(questionId);
+    setError("");
+    try {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) throw new Error("Supabase Storage is not configured.");
+
+      const { data: signedFile, error: signedUrlError } = await supabase.storage
+        .from("supplier-evidence")
+        .createSignedUrl(file.path, 60);
+      if (signedUrlError) throw signedUrlError;
+      setFilePreview({
+        url: signedFile.signedUrl,
+        name: file.name ?? "Uploaded file",
+      });
+    } catch (viewError) {
+      setError(
+        viewError instanceof Error
+          ? viewError.message
+          : "Could not open this file.",
+      );
+    } finally {
+      setOpeningFileQuestionId(null);
     }
   };
 
@@ -298,7 +338,9 @@ export default function AnswerQuestionnaire() {
           value={answers[q.id]}
           onChange={(value) => update(q.id, value)}
           onFileSelect={(file) => attachFile(q.id, file)}
+          onFileView={(value) => void viewUploadedFile(q.id, value)}
           fileUploading={uploadingQuestionId === q.id}
+          fileOpening={openingFileQuestionId === q.id}
           disabled={submitted}
         />
       </div>
@@ -530,6 +572,41 @@ export default function AnswerQuestionnaire() {
           </div>
         )}
       </Card>
+      {filePreview && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setFilePreview(null);
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Preview ${filePreview.name}`}
+            className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-xl"
+          >
+            <header className="flex items-center justify-between gap-4 border-b border-line px-5 py-3">
+              <h2 className="truncate text-sm font-semibold">
+                {filePreview.name}
+              </h2>
+              <button
+                type="button"
+                aria-label="Close file preview"
+                onClick={() => setFilePreview(null)}
+                className="rounded-lg p-2 text-muted hover:bg-gray-100"
+              >
+                <X size={18} />
+              </button>
+            </header>
+            <iframe
+              src={filePreview.url}
+              title={filePreview.name}
+              className="h-[75vh] w-full bg-gray-100"
+            />
+          </section>
+        </div>
+      )}
     </>
   );
 }
