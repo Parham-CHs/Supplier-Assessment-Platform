@@ -3,6 +3,7 @@ import { useParams } from "next/navigation";
 import { useApp } from "@/components/app-provider";
 import { Card, PageHeading, Badge } from "@/components/ui";
 import Link from "next/link";
+import { ConditionSummary } from "@/features/questionnaires/condition-summary";
 export default function QuestionnaireDetail() {
   const { id } = useParams<{ id: string }>();
   const { data } = useApp();
@@ -29,16 +30,15 @@ export default function QuestionnaireDetail() {
               </div>
               <div className="mt-2 flex gap-2 text-xs text-muted">
                 {x.required ? "Required" : "Optional"}
-                {x.condition && (
-                  <span>
-                    {/* · Conditional on {x.condition.dependsOn}{" "}
-                    {x.condition.operator} {String(x.condition.value)} */}
-                    · Conditional ({x.condition.logic.toUpperCase()}):{" "}
-                    {x.condition.rules.length} rule
-                    {x.condition.rules.length === 1 ? "" : "s"}
-                  </span>
-                )}
               </div>
+              {x.condition && (
+                <div className="mt-3">
+                  <ConditionSummary
+                    condition={x.condition}
+                    questions={q.questions}
+                  />
+                </div>
+              )}
             </div>
           ))}
         </div>

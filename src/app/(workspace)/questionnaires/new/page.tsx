@@ -23,6 +23,7 @@ import type {
 } from "@/lib/types";
 import { generateId } from "@/lib/utils";
 import { Plus, Trash2, ArrowLeft, GitBranch, Save, Layers } from "lucide-react";
+import { ConditionSummary } from "@/features/questionnaires/condition-summary";
 
 const types: { value: QuestionType; label: string }[] = [
   { value: "short_text", label: "Short text" },
@@ -699,6 +700,15 @@ export default function NewQuestionnaire() {
                             <Trash2 size={16} />
                           </Button>
                         </div>
+
+                        {question.condition && (
+                          <div className="mb-4">
+                            <ConditionSummary
+                              condition={question.condition}
+                              questions={questions}
+                            />
+                          </div>
+                        )}
 
                         <Label>Question title</Label>
                         <Input
