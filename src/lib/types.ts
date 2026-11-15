@@ -115,6 +115,12 @@ export type Assignment = {
   displayMode: DisplayMode;
   sections: QuestionnaireSection[];
 };
+export type UploadedFileAnswer = {
+  path: string;
+  name: string;
+  contentType: string;
+  size: number;
+};
 export type Notification = {
   id: string;
   title: string;

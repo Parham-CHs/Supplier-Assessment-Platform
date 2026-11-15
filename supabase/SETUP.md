@@ -17,8 +17,11 @@ Open **SQL Editor** and run these files in order:
 
 1. `supabase/migrations/001_initial_schema.sql`
 2. `supabase/migrations/002_auth_and_permissions_hardening.sql`
+3. `supabase/migrations/003_supplier_answer_file_storage.sql`
 
 If you already ran the original version of migration 001, run migration 002 after it. It fixes the supplier question-scope policy and adds server-side assignment/response guards.
+
+Migration 003 configures the private `supplier-evidence` Storage bucket. Suppliers can upload PDF, PNG, or JPEG evidence up to 10 MB for their own file questions; organization staff can view evidence for their organization through short-lived signed URLs.
 
 ## 3. Create the first organization administrator
 
@@ -93,4 +96,4 @@ RLS is the security boundary; hiding UI elements is not authorization. Never exp
 
 ## Current integration scope
 
-Supabase Auth, cookie-backed session refresh, profile-based role selection, RLS-scoped reads, questionnaire creation/versioning, assignment creation, supplier response drafts/submission, and in-app notifications are connected. Supplier/product administration screens still need their create/edit forms wired to database mutations. Email delivery and real file uploads to the private Storage bucket are not yet connected.
+Supabase Auth, cookie-backed session refresh, profile-based role selection, RLS-scoped reads, questionnaire creation/versioning, assignment creation, supplier response drafts/submission, private supplier evidence uploads, and in-app notifications are connected. Supplier/product administration screens still need their create/edit forms wired to database mutations. Email delivery is not yet connected.

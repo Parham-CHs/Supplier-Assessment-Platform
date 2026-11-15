@@ -11,8 +11,18 @@ import {
   Badge,
   Input,
 } from "@/components/ui";
-import { Send, Eye } from "lucide-react";
+import { Send, Eye, ExternalLink } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import type { UploadedFileAnswer } from "@/lib/types";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+
+function getUploadedFileAnswer(value: unknown): UploadedFileAnswer | null {
+  if (typeof value !== "object" || value === null) return null;
+  const file = value as Partial<UploadedFileAnswer>;
+  return typeof file.path === "string" && typeof file.name === "string"
+    ? (file as UploadedFileAnswer)
+    : null;
+}
 
 export default function Assignments() {
   const { data, createAssignment } = useApp();
@@ -34,6 +44,10 @@ export default function Assignments() {
 
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [fileError, setFileError] = useState("");
+  const [openingFileQuestionId, setOpeningFileQuestionId] = useState<
+    string | null
+  >(null);
 
   const selectedQ = data.questionnaires.find((q) => q.id === questionnaireId);
 
@@ -55,6 +69,37 @@ export default function Assignments() {
 
   const toggle = (arr: string[], id: string, set: (v: string[]) => void) => {
     set(arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]);
+  };
+
+  const viewFile = async (questionId: string, answer: unknown) => {
+    const file = getUploadedFileAnswer(answer);
+    if (!file) return;
+
+    const preview = window.open("about:blank", "_blank");
+    if (!preview) {
+      setFileError("Allow pop-ups to open supplier attachments.");
+      return;
+    }
+    preview.opener = null;
+    setOpeningFileQuestionId(questionId);
+    setFileError("");
+    try {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) throw new Error("Supabase Storage is not configured.");
+
+      const { data: signedFile, error: signedUrlError } = await supabase.storage
+        .from("supplier-evidence")
+        .createSignedUrl(file.path, 60);
+      if (signedUrlError) throw signedUrlError;
+      preview.location.href = signedFile.signedUrl;
+    } catch (error) {
+      preview.close();
+      setFileError(
+        error instanceof Error ? error.message : "Could not open this file.",
+      );
+    } finally {
+      setOpeningFileQuestionId(null);
+    }
   };
 
   const send = async () => {
@@ -347,8 +392,14 @@ export default function Assignments() {
               </div>
 
               <div className="space-y-4">
+                {fileError && (
+                  <p role="alert" className="text-sm text-red-700">
+                    {fileError}
+                  </p>
+                )}
                 {(selectedAssignment.questions ?? []).map((question, index) => {
                   const answer = selectedAssignment.response?.[question.id];
+                  const fileAnswer = getUploadedFileAnswer(answer);
 
                   return (
                     <div
@@ -359,17 +410,45 @@ export default function Assignments() {
                         {index + 1}. {question.title}
                       </p>
 
-                      <p className="whitespace-pre-wrap text-sm text-muted">
-                        {answer === undefined ||
-                        answer === null ||
-                        answer === ""
-                          ? "No answer provided"
-                          : Array.isArray(answer)
-                            ? answer.join(", ")
-                            : typeof answer === "object"
-                              ? JSON.stringify(answer)
-                              : String(answer)}
-                      </p>
+                      {question.type === "file" ? (
+                        fileAnswer ? (
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <p className="truncate text-sm text-muted">
+                              {fileAnswer.name}
+                            </p>
+                            <Button
+                              variant="secondary"
+                              onClick={() =>
+                                void viewFile(question.id, fileAnswer)
+                              }
+                              disabled={openingFileQuestionId === question.id}
+                            >
+                              <ExternalLink size={15} />
+                              {openingFileQuestionId === question.id
+                                ? "Opening…"
+                                : "View file"}
+                            </Button>
+                          </div>
+                        ) : (
+                          <p className="whitespace-pre-wrap text-sm text-muted">
+                            {typeof answer === "string" && answer
+                              ? `${answer} (filename only; no uploaded file)`
+                              : "No answer provided"}
+                          </p>
+                        )
+                      ) : (
+                        <p className="whitespace-pre-wrap text-sm text-muted">
+                          {answer === undefined ||
+                          answer === null ||
+                          answer === ""
+                            ? "No answer provided"
+                            : Array.isArray(answer)
+                              ? answer.join(", ")
+                              : typeof answer === "object"
+                                ? JSON.stringify(answer)
+                                : String(answer)}
+                        </p>
+                      )}
                     </div>
                   );
                 })}

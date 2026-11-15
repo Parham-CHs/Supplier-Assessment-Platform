@@ -16,6 +16,7 @@ import type {
   Question,
   Questionnaire,
   Role,
+  UploadedFileAnswer,
 } from "@/lib/types";
 import {
   getSupabaseBrowserClient,
@@ -54,6 +55,11 @@ type ContextValue = {
     productIds: string[];
     deadline: string;
   }) => Promise<void>;
+  uploadResponseFile: (
+    assignmentId: string,
+    questionId: string,
+    file: File,
+  ) => Promise<UploadedFileAnswer | string>;
   saveResponse: (
     id: string,
     answers: Record<string, unknown>,
@@ -1487,6 +1493,60 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const resetDemo = () => {
     if (!configured) setData(seedData);
   };
+  const uploadResponseFile = async (
+    assignmentId: string,
+    questionId: string,
+    file: File,
+  ): Promise<UploadedFileAnswer | string> => {
+    if (!supabase) return file.name;
+
+    const maxFileSize = 10 * 1024 * 1024;
+    if (file.size > maxFileSize) {
+      throw new Error("Files must be 10 MB or smaller.");
+    }
+
+    const contentTypes: Record<string, string> = {
+      pdf: "application/pdf",
+      png: "image/png",
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+    };
+    const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+    const contentType = contentTypes[extension];
+    if (!contentType || (file.type && file.type !== contentType)) {
+      throw new Error("Choose a PDF, PNG, or JPEG file.");
+    }
+
+    const assignment = data.assignments.find(
+      (item) => item.id === assignmentId,
+    );
+    const questions =
+      assignment?.questions ??
+      data.questionnaires.find(
+        (item) => item.id === assignment?.questionnaireId,
+      )?.questions;
+    if (
+      !assignment ||
+      assignment.supplierId !== supplierId ||
+      !questions?.some(
+        (question) => question.id === questionId && question.type === "file",
+      )
+    ) {
+      throw new Error("This file question is not available for your assignment.");
+    }
+
+    const safeName = file.name
+      .normalize("NFKD")
+      .replace(/[^a-zA-Z0-9._-]/g, "_")
+      .slice(-120);
+    const path = `${assignmentId}/${questionId}/${crypto.randomUUID()}-${safeName}`;
+    const { error: uploadError } = await supabase.storage
+      .from("supplier-evidence")
+      .upload(path, file, { contentType, upsert: false });
+    if (uploadError) throw uploadError;
+
+    return { path, name: file.name, contentType, size: file.size };
+  };
   const value = useMemo<ContextValue>(
     () => ({
       data,
@@ -1508,6 +1568,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       addQuestionnaire,
       updateQuestionnaire,
       createAssignment,
+      uploadResponseFile,
       saveResponse,
       markNotificationRead,
       resetDemo,
@@ -1527,6 +1588,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       addQuestionnaire,
       updateQuestionnaire,
       createAssignment,
+      uploadResponseFile,
       saveResponse,
       markNotificationRead,
       updateSupplier,

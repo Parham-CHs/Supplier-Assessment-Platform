@@ -101,7 +101,7 @@ export default function AnswerQuestionnaire() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
-  const { data, saveResponse, supplierId } = useApp();
+  const { data, saveResponse, supplierId, uploadResponseFile } = useApp();
 
   const assignment = data.assignments.find(
     (a) => a.id === id && a.supplierId === (supplierId ?? "sup-samsung"),
@@ -131,6 +131,9 @@ export default function AnswerQuestionnaire() {
   );
   const [error, setError] = useState("");
   const [currentStep, setCurrentStep] = useState(0);
+  const [uploadingQuestionId, setUploadingQuestionId] = useState<string | null>(
+    null,
+  );
 
   const visible = useMemo(
     () =>
@@ -195,7 +198,29 @@ export default function AnswerQuestionnaire() {
     setError("");
   };
 
+  const attachFile = async (questionId: string, file: File) => {
+    setUploadingQuestionId(questionId);
+    setError("");
+    try {
+      const fileAnswer = await uploadResponseFile(id, questionId, file);
+      update(questionId, fileAnswer);
+    } catch (uploadError) {
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Could not upload this file.",
+      );
+    } finally {
+      setUploadingQuestionId(null);
+    }
+  };
+
   const save = async (submit: boolean) => {
+    if (uploadingQuestionId) {
+      setError("Wait for the file upload to finish before saving.");
+      return;
+    }
+
     const cleaned = pruneHiddenAnswers(questionnaire.questions, answers);
 
     // Only questions in currently visible sections are applicable.
@@ -272,6 +297,8 @@ export default function AnswerQuestionnaire() {
           question={q}
           value={answers[q.id]}
           onChange={(value) => update(q.id, value)}
+          onFileSelect={(file) => attachFile(q.id, file)}
+          fileUploading={uploadingQuestionId === q.id}
           disabled={submitted}
         />
       </div>
@@ -452,7 +479,11 @@ export default function AnswerQuestionnaire() {
             <div className="flex flex-wrap justify-end gap-2">
               {!submitted && (
                 <>
-                  <Button variant="secondary" onClick={() => save(false)}>
+                  <Button
+                    variant="secondary"
+                    onClick={() => save(false)}
+                    disabled={uploadingQuestionId !== null}
+                  >
                     <Save size={16} />
                     Save draft
                   </Button>
@@ -470,7 +501,10 @@ export default function AnswerQuestionnaire() {
                       <ChevronRight size={16} />
                     </Button>
                   ) : (
-                    <Button onClick={() => save(true)}>
+                    <Button
+                      onClick={() => save(true)}
+                      disabled={uploadingQuestionId !== null}
+                    >
                       <Send size={16} />
                       Submit response
                     </Button>

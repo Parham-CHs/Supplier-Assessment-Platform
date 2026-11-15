@@ -5,11 +5,15 @@ export function QuestionField({
   question,
   value,
   onChange,
+  onFileSelect,
+  fileUploading = false,
   disabled,
 }: {
   question: Question;
   value: unknown;
   onChange: (v: unknown) => void;
+  onFileSelect?: (file: File) => Promise<void>;
+  fileUploading?: boolean;
   disabled?: boolean;
 }) {
   const val = value ?? "";
@@ -133,17 +137,37 @@ export function QuestionField({
         </div>
       );
     case "file":
+      const fileName =
+        typeof val === "string"
+          ? val
+          : typeof val === "object" && val !== null && "name" in val
+            ? String(val.name)
+            : "";
       return (
         <div>
           <Input
             type="file"
             accept=".pdf,.png,.jpg,.jpeg"
-            onChange={(e) => onChange(e.target.files?.[0]?.name ?? "")}
-            disabled={disabled}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              if (onFileSelect) void onFileSelect(file);
+              else onChange(file.name);
+              event.target.value = "";
+            }}
+            disabled={disabled || fileUploading}
           />
+          {fileUploading ? (
+            <p role="status" className="mt-1 text-xs text-muted">
+              Uploading file…
+            </p>
+          ) : fileName ? (
+            <p className="mt-1 truncate text-xs text-muted">
+              Attached: {fileName}
+            </p>
+          ) : null}
           <p className="mt-1 text-xs text-muted">
-            Demo mode stores the selected filename. Configure Supabase Storage
-            for real uploads.
+            PDF, PNG, or JPEG, up to 10 MB. Demo mode stores only the filename.
           </p>
         </div>
       );
