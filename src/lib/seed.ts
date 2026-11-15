@@ -1,4 +1,3 @@
-
 import type { AppData } from "./types";
 
 const today = new Date();
@@ -128,9 +127,14 @@ export const seedData: AppData = {
           options: ["CE", "ISO 9001", "UL", "Energy Star", "Other"],
           position: 2,
           condition: {
-            dependsOn: "q1",
-            operator: "equals",
-            value: "yes",
+            logic: "and",
+            rules: [
+              {
+                dependsOn: "q1",
+                operator: "equals",
+                value: "yes",
+              },
+            ],
           },
         },
         {
@@ -142,9 +146,14 @@ export const seedData: AppData = {
           options: [],
           position: 3,
           condition: {
-            dependsOn: "q1",
-            operator: "equals",
-            value: "yes",
+            logic: "and",
+            rules: [
+              {
+                dependsOn: "q1",
+                operator: "equals",
+                value: "yes",
+              },
+            ],
           },
         },
         {
@@ -156,9 +165,14 @@ export const seedData: AppData = {
           options: [],
           position: 4,
           condition: {
-            dependsOn: "q1",
-            operator: "equals",
-            value: "no",
+            logic: "and",
+            rules: [
+              {
+                dependsOn: "q1",
+                operator: "equals",
+                value: "yes",
+              },
+            ],
           },
         },
         {
@@ -229,9 +243,14 @@ export const seedData: AppData = {
           options: [],
           position: 4,
           condition: {
-            dependsOn: "qq3",
-            operator: "equals",
-            value: "yes",
+            logic: "and",
+            rules: [
+              {
+                dependsOn: "q1",
+                operator: "equals",
+                value: "yes",
+              },
+            ],
           },
         },
       ],
@@ -345,8 +364,7 @@ export const seedData: AppData = {
     {
       id: "n1",
       title: "New questionnaire assigned",
-      message:
-        "Product Safety Assessment was assigned to your company.",
+      message: "Product Safety Assessment was assigned to your company.",
       createdAt: today.toISOString(),
       read: false,
       assignmentId: "as-1002",

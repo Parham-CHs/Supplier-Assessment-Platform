@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -23,14 +22,7 @@ import type {
   DisplayMode,
 } from "@/lib/types";
 import { generateId } from "@/lib/utils";
-import {
-  Plus,
-  Trash2,
-  ArrowLeft,
-  GitBranch,
-  Save,
-  Layers,
-} from "lucide-react";
+import { Plus, Trash2, ArrowLeft, GitBranch, Save, Layers } from "lucide-react";
 
 const types: { value: QuestionType; label: string }[] = [
   { value: "short_text", label: "Short text" },
@@ -50,8 +42,7 @@ export default function NewQuestionnaire() {
 
   const [title, setTitle] = useState("New supplier assessment");
   const [description, setDescription] = useState("");
-  const [displayMode, setDisplayMode] =
-    useState<DisplayMode>("single_page");
+  const [displayMode, setDisplayMode] = useState<DisplayMode>("single_page");
 
   const [sections, setSections] = useState<QuestionnaireSection[]>(() => [
     {
@@ -90,10 +81,7 @@ export default function NewQuestionnaire() {
     ]);
   };
 
-  const updateSection = (
-    id: string,
-    patch: Partial<QuestionnaireSection>,
-  ) => {
+  const updateSection = (id: string, patch: Partial<QuestionnaireSection>) => {
     setSections((current) =>
       current.map((section) =>
         section.id === id ? { ...section, ...patch } : section,
@@ -267,10 +255,7 @@ export default function NewQuestionnaire() {
           {/* Questionnaire settings */}
           <Card>
             <Label>Questionnaire title</Label>
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} />
 
             <Label>Description</Label>
             <Textarea
@@ -284,9 +269,7 @@ export default function NewQuestionnaire() {
               <Label>Display mode</Label>
               <Select
                 value={displayMode}
-                onChange={(e) =>
-                  setDisplayMode(e.target.value as DisplayMode)
-                }
+                onChange={(e) => setDisplayMode(e.target.value as DisplayMode)}
               >
                 <option value="single_page">Single page</option>
                 <option value="step_by_step">Step by step</option>
@@ -348,6 +331,332 @@ export default function NewQuestionnaire() {
                   />
                 </div>
 
+                {/* Conditional section */}
+                {sectionIndex > 0 && (
+                  <div className="mt-4 rounded-xl bg-slate-50 p-3">
+                    <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
+                      <GitBranch size={15} />
+                      Conditional visibility
+                    </div>
+
+                    {(() => {
+                      const previousSectionIds = new Set(
+                        sections.slice(0, sectionIndex).map((item) => item.id),
+                      );
+
+                      const previousQuestions = questions.filter((item) =>
+                        previousSectionIds.has(item.sectionId),
+                      );
+
+                      const condition = section.condition;
+                      const rules = condition?.rules ?? [];
+
+                      const getDefaultValue = (source: Question) => {
+                        if (source.type === "yes_no") return "yes";
+                        if (
+                          source.type === "rating" ||
+                          source.type === "number"
+                        )
+                          return 1;
+
+                        if (
+                          source.type === "single_choice" ||
+                          source.type === "multiple_choice"
+                        ) {
+                          return source.options?.[0] ?? "";
+                        }
+
+                        return "";
+                      };
+
+                      const updateRules = (
+                        nextRules: NonNullable<typeof condition>["rules"],
+                      ) => {
+                        updateSection(section.id, {
+                          condition:
+                            nextRules.length > 0
+                              ? {
+                                  logic: condition?.logic ?? "and",
+                                  rules: nextRules,
+                                }
+                              : undefined,
+                        });
+                      };
+
+                      const addRule = () => {
+                        const source = previousQuestions.find(
+                          (item) =>
+                            !rules.some((rule) => rule.dependsOn === item.id),
+                        );
+
+                        if (!source) return;
+
+                        updateRules([
+                          ...rules,
+                          {
+                            dependsOn: source.id,
+                            operator:
+                              source.type === "multiple_choice"
+                                ? "contains"
+                                : "equals",
+                            value: getDefaultValue(source),
+                          },
+                        ]);
+                      };
+
+                      return (
+                        <>
+                          {condition && (
+                            <div className="mb-3 flex items-center gap-2">
+                              <span className="text-xs text-muted">Match</span>
+
+                              <Select
+                                value={condition.logic}
+                                onChange={(e) =>
+                                  updateSection(section.id, {
+                                    condition: {
+                                      ...condition,
+                                      logic: e.target.value as "and" | "or",
+                                    },
+                                  })
+                                }
+                              >
+                                <option value="and">
+                                  ALL conditions (AND)
+                                </option>
+                                <option value="or">ANY condition (OR)</option>
+                              </Select>
+                            </div>
+                          )}
+
+                          <div className="space-y-3">
+                            {rules.map((rule, ruleIndex) => {
+                              const sourceQuestion = previousQuestions.find(
+                                (item) => item.id === rule.dependsOn,
+                              );
+
+                              const updateRule = (
+                                patch: Partial<typeof rule>,
+                              ) => {
+                                updateRules(
+                                  rules.map((item, index) =>
+                                    index === ruleIndex
+                                      ? { ...item, ...patch }
+                                      : item,
+                                  ),
+                                );
+                              };
+
+                              return (
+                                <div
+                                  key={`${section.id}-${ruleIndex}`}
+                                  className="rounded-lg border border-slate-200 bg-white p-2"
+                                >
+                                  <div className="grid gap-2 sm:grid-cols-3">
+                                    <Select
+                                      value={rule.dependsOn}
+                                      onChange={(e) => {
+                                        const source = previousQuestions.find(
+                                          (item) => item.id === e.target.value,
+                                        );
+
+                                        if (!source) return;
+
+                                        updateRule({
+                                          dependsOn: source.id,
+                                          operator:
+                                            source.type === "multiple_choice"
+                                              ? "contains"
+                                              : "equals",
+                                          value: getDefaultValue(source),
+                                        });
+                                      }}
+                                    >
+                                      {previousQuestions.map((item) => (
+                                        <option key={item.id} value={item.id}>
+                                          {item.title.slice(0, 35)}
+                                        </option>
+                                      ))}
+                                    </Select>
+
+                                    <Select
+                                      value={rule.operator}
+                                      onChange={(e) =>
+                                        updateRule({
+                                          operator: e.target.value as Operator,
+                                        })
+                                      }
+                                    >
+                                      <option value="equals">Equals</option>
+                                      <option value="not_equals">
+                                        Does not equal
+                                      </option>
+                                      <option value="contains">Contains</option>
+                                      <option value="greater_than">
+                                        Greater than
+                                      </option>
+                                      <option value="less_than">
+                                        Less than
+                                      </option>
+                                    </Select>
+
+                                    {(() => {
+                                      const updateValue = (
+                                        value: string | number,
+                                      ) => updateRule({ value });
+
+                                      if (sourceQuestion?.type === "date") {
+                                        return (
+                                          <Input
+                                            type="date"
+                                            value={String(rule.value)}
+                                            onChange={(e) =>
+                                              updateValue(e.target.value)
+                                            }
+                                          />
+                                        );
+                                      }
+
+                                      if (sourceQuestion?.type === "yes_no") {
+                                        return (
+                                          <Select
+                                            value={String(rule.value)}
+                                            onChange={(e) =>
+                                              updateValue(e.target.value)
+                                            }
+                                          >
+                                            <option value="yes">Yes</option>
+                                            <option value="no">No</option>
+                                          </Select>
+                                        );
+                                      }
+
+                                      if (
+                                        sourceQuestion?.type ===
+                                          "single_choice" ||
+                                        sourceQuestion?.type ===
+                                          "multiple_choice"
+                                      ) {
+                                        return (
+                                          <Select
+                                            value={String(rule.value)}
+                                            onChange={(e) =>
+                                              updateValue(e.target.value)
+                                            }
+                                          >
+                                            {(sourceQuestion.options ?? []).map(
+                                              (option) => (
+                                                <option
+                                                  key={option}
+                                                  value={option}
+                                                >
+                                                  {option}
+                                                </option>
+                                              ),
+                                            )}
+                                          </Select>
+                                        );
+                                      }
+
+                                      if (sourceQuestion?.type === "rating") {
+                                        return (
+                                          <Select
+                                            value={String(rule.value)}
+                                            onChange={(e) =>
+                                              updateValue(
+                                                Number(e.target.value),
+                                              )
+                                            }
+                                          >
+                                            {[1, 2, 3, 4, 5].map((rating) => (
+                                              <option
+                                                key={rating}
+                                                value={rating}
+                                              >
+                                                {rating}
+                                              </option>
+                                            ))}
+                                          </Select>
+                                        );
+                                      }
+
+                                      if (sourceQuestion?.type === "number") {
+                                        return (
+                                          <Input
+                                            type="number"
+                                            value={String(rule.value)}
+                                            onChange={(e) =>
+                                              updateValue(
+                                                e.target.value === ""
+                                                  ? ""
+                                                  : Number(e.target.value),
+                                              )
+                                            }
+                                            placeholder="Expected number"
+                                          />
+                                        );
+                                      }
+
+                                      return (
+                                        <Input
+                                          value={String(rule.value)}
+                                          onChange={(e) =>
+                                            updateValue(e.target.value)
+                                          }
+                                          placeholder="Expected answer"
+                                        />
+                                      );
+                                    })()}
+                                  </div>
+
+                                  <div className="mt-2 flex justify-end">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        updateRules(
+                                          rules.filter(
+                                            (_, index) => index !== ruleIndex,
+                                          ),
+                                        )
+                                      }
+                                      className="text-xs text-red-600 hover:text-red-700"
+                                    >
+                                      Remove condition
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          <div className="mt-3">
+                            {!condition ? (
+                              <Button
+                                disabled={previousQuestions.length === 0}
+                                onClick={addRule}
+                              >
+                                <Plus size={14} />
+                                Add condition
+                              </Button>
+                            ) : (
+                              <Button variant="secondary" onClick={addRule}>
+                                <Plus size={14} />
+                                Add another condition
+                              </Button>
+                            )}
+                          </div>
+
+                          <p className="mt-2 text-[11px] text-muted">
+                            {condition?.logic === "or"
+                              ? "This section appears when at least one condition matches."
+                              : "This section appears only when all conditions match."}
+                          </p>
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
+
                 {/* Questions in this section */}
                 <div className="mt-5 space-y-4">
                   {sectionQuestions.map((question) => {
@@ -362,16 +671,11 @@ export default function NewQuestionnaire() {
                       >
                         <div className="mb-4 flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Badge>
-                              Question {questionIndex + 1}
-                            </Badge>
+                            <Badge>Question {questionIndex + 1}</Badge>
 
                             {question.condition && (
                               <Badge tone="blue">
-                                <GitBranch
-                                  size={12}
-                                  className="mr-1 inline"
-                                />
+                                <GitBranch size={12} className="mr-1 inline" />
                                 Conditional
                               </Badge>
                             )}
@@ -415,10 +719,7 @@ export default function NewQuestionnaire() {
                               }}
                             >
                               {types.map((type) => (
-                                <option
-                                  key={type.value}
-                                  value={type.value}
-                                >
+                                <option key={type.value} value={type.value}>
                                   {type.label}
                                 </option>
                               ))}
@@ -439,10 +740,9 @@ export default function NewQuestionnaire() {
                           </label>
                         </div>
 
-                        {[
-                          "single_choice",
-                          "multiple_choice",
-                        ].includes(question.type) && (
+                        {["single_choice", "multiple_choice"].includes(
+                          question.type,
+                        ) && (
                           <div className="mt-3">
                             <Label>Options (comma separated)</Label>
                             <Input
@@ -479,94 +779,358 @@ export default function NewQuestionnaire() {
                         </div>
 
                         {/* Conditional question */}
-                        <div className="mt-4 rounded-xl bg-slate-50 p-3">
-                          <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-                            <GitBranch size={15} />
-                            Conditional visibility
-                          </div>
+                        {questionIndex > 0 && (
+                          <div className="mt-4 rounded-xl bg-slate-50 p-3">
+                            <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
+                              <GitBranch size={15} />
+                              Conditional visibility
+                            </div>
 
-                          <div className="grid gap-2 sm:grid-cols-3">
-                            <Select
-                              value={question.condition?.dependsOn ?? ""}
-                              onChange={(e) =>
+                            {(() => {
+                              const previousQuestions = questions.filter(
+                                (item) =>
+                                  item.id !== question.id &&
+                                  item.position < questionIndex + 1,
+                              );
+
+                              const condition = question.condition;
+                              const rules = condition?.rules ?? [];
+
+                              const getDefaultValue = (
+                                source: (typeof questions)[number],
+                              ) => {
+                                if (source.type === "yes_no") return "yes";
+                                if (source.type === "rating") return 1;
+                                if (
+                                  source.type === "single_choice" ||
+                                  source.type === "multiple_choice"
+                                ) {
+                                  return source.options?.[0] ?? "";
+                                }
+                                return "";
+                              };
+
+                              const updateRules = (
+                                nextRules: NonNullable<
+                                  typeof condition
+                                >["rules"],
+                              ) => {
                                 updateQuestion(question.id, {
-                                  condition: e.target.value
-                                    ? {
-                                        dependsOn: e.target.value,
-                                        operator: "equals",
-                                        value: "yes",
-                                      }
-                                    : undefined,
-                                })
-                              }
-                            >
-                              <option value="">Always show</option>
+                                  condition:
+                                    nextRules.length > 0
+                                      ? {
+                                          logic: condition?.logic ?? "and",
+                                          rules: nextRules,
+                                        }
+                                      : undefined,
+                                });
+                              };
 
-                              {questions
-                                .filter(
-                                  (item) =>
-                                    item.id !== question.id &&
-                                    item.position < questionIndex + 1,
-                                )
-                                .map((item) => (
-                                  <option
-                                    key={item.id}
-                                    value={item.id}
-                                  >
-                                    {item.title.slice(0, 35)}
-                                  </option>
-                                ))}
-                            </Select>
+                              const addRule = () => {
+                                const source = previousQuestions[0];
 
-                            <Select
-                              disabled={!question.condition}
-                              value={
-                                question.condition?.operator ?? "equals"
-                              }
-                              onChange={(e) =>
-                                question.condition &&
-                                updateQuestion(question.id, {
-                                  condition: {
-                                    ...question.condition,
-                                    operator: e.target.value as Operator,
+                                if (!source) return;
+
+                                updateRules([
+                                  ...rules,
+                                  {
+                                    dependsOn: source.id,
+                                    operator:
+                                      source.type === "multiple_choice"
+                                        ? "contains"
+                                        : "equals",
+                                    value: getDefaultValue(source),
                                   },
-                                })
-                              }
-                            >
-                              <option value="equals">Equals</option>
-                              <option value="not_equals">
-                                Does not equal
-                              </option>
-                              <option value="contains">Contains</option>
-                              <option value="greater_than">
-                                Greater than
-                              </option>
-                              <option value="less_than">Less than</option>
-                            </Select>
+                                ]);
+                              };
 
-                            <Input
-                              disabled={!question.condition}
-                              value={String(
-                                question.condition?.value ?? "",
-                              )}
-                              onChange={(e) =>
-                                question.condition &&
-                                updateQuestion(question.id, {
-                                  condition: {
-                                    ...question.condition,
-                                    value: e.target.value,
-                                  },
-                                })
-                              }
-                              placeholder="Expected answer"
-                            />
+                              return (
+                                <>
+                                  {condition && (
+                                    <div className="mb-3 flex items-center gap-2">
+                                      <span className="text-xs text-muted">
+                                        Match
+                                      </span>
+
+                                      <Select
+                                        value={condition.logic}
+                                        onChange={(e) =>
+                                          updateQuestion(question.id, {
+                                            condition: {
+                                              ...condition,
+                                              logic: e.target.value as
+                                                | "and"
+                                                | "or",
+                                            },
+                                          })
+                                        }
+                                      >
+                                        <option value="and">
+                                          ALL conditions (AND)
+                                        </option>
+                                        <option value="or">
+                                          ANY condition (OR)
+                                        </option>
+                                      </Select>
+                                    </div>
+                                  )}
+
+                                  <div className="space-y-3">
+                                    {rules.map((rule, ruleIndex) => {
+                                      const sourceQuestion = questions.find(
+                                        (item) => item.id === rule.dependsOn,
+                                      );
+
+                                      const updateRule = (
+                                        patch: Partial<typeof rule>,
+                                      ) => {
+                                        updateRules(
+                                          rules.map((item, index) =>
+                                            index === ruleIndex
+                                              ? { ...item, ...patch }
+                                              : item,
+                                          ),
+                                        );
+                                      };
+
+                                      return (
+                                        <div
+                                          key={`${question.id}-${ruleIndex}`}
+                                          className="rounded-lg border border-slate-200 bg-white p-2"
+                                        >
+                                          <div className="grid gap-2 sm:grid-cols-3">
+                                            <Select
+                                              value={rule.dependsOn}
+                                              onChange={(e) => {
+                                                const source =
+                                                  previousQuestions.find(
+                                                    (item) =>
+                                                      item.id ===
+                                                      e.target.value,
+                                                  );
+
+                                                if (!source) return;
+
+                                                updateRule({
+                                                  dependsOn: source.id,
+                                                  operator:
+                                                    source.type ===
+                                                    "multiple_choice"
+                                                      ? "contains"
+                                                      : "equals",
+                                                  value:
+                                                    getDefaultValue(source),
+                                                });
+                                              }}
+                                            >
+                                              {previousQuestions.map((item) => (
+                                                <option
+                                                  key={item.id}
+                                                  value={item.id}
+                                                >
+                                                  {item.title.slice(0, 35)}
+                                                </option>
+                                              ))}
+                                            </Select>
+
+                                            <Select
+                                              value={rule.operator}
+                                              onChange={(e) =>
+                                                updateRule({
+                                                  operator: e.target
+                                                    .value as Operator,
+                                                })
+                                              }
+                                            >
+                                              <option value="equals">
+                                                Equals
+                                              </option>
+                                              <option value="not_equals">
+                                                Does not equal
+                                              </option>
+                                              <option value="contains">
+                                                Contains
+                                              </option>
+                                              <option value="greater_than">
+                                                Greater than
+                                              </option>
+                                              <option value="less_than">
+                                                Less than
+                                              </option>
+                                            </Select>
+
+                                            {(() => {
+                                              const updateValue = (
+                                                value: string | number,
+                                              ) => updateRule({ value });
+
+                                              if (
+                                                sourceQuestion?.type === "date"
+                                              ) {
+                                                return (
+                                                  <Input
+                                                    type="date"
+                                                    value={String(rule.value)}
+                                                    onChange={(e) =>
+                                                      updateValue(
+                                                        e.target.value,
+                                                      )
+                                                    }
+                                                  />
+                                                );
+                                              }
+
+                                              if (
+                                                sourceQuestion?.type ===
+                                                "yes_no"
+                                              ) {
+                                                return (
+                                                  <Select
+                                                    value={String(rule.value)}
+                                                    onChange={(e) =>
+                                                      updateValue(
+                                                        e.target.value,
+                                                      )
+                                                    }
+                                                  >
+                                                    <option value="yes">
+                                                      Yes
+                                                    </option>
+                                                    <option value="no">
+                                                      No
+                                                    </option>
+                                                  </Select>
+                                                );
+                                              }
+
+                                              if (
+                                                sourceQuestion?.type ===
+                                                  "single_choice" ||
+                                                sourceQuestion?.type ===
+                                                  "multiple_choice"
+                                              ) {
+                                                return (
+                                                  <Select
+                                                    value={String(rule.value)}
+                                                    onChange={(e) =>
+                                                      updateValue(
+                                                        e.target.value,
+                                                      )
+                                                    }
+                                                  >
+                                                    {(
+                                                      sourceQuestion.options ??
+                                                      []
+                                                    ).map((option) => (
+                                                      <option
+                                                        key={option}
+                                                        value={option}
+                                                      >
+                                                        {option}
+                                                      </option>
+                                                    ))}
+                                                  </Select>
+                                                );
+                                              }
+
+                                              if (
+                                                sourceQuestion?.type ===
+                                                "rating"
+                                              ) {
+                                                return (
+                                                  <Select
+                                                    value={String(rule.value)}
+                                                    onChange={(e) =>
+                                                      updateValue(
+                                                        Number(e.target.value),
+                                                      )
+                                                    }
+                                                  >
+                                                    {[1, 2, 3, 4, 5].map(
+                                                      (rating) => (
+                                                        <option
+                                                          key={rating}
+                                                          value={rating}
+                                                        >
+                                                          {rating}
+                                                        </option>
+                                                      ),
+                                                    )}
+                                                  </Select>
+                                                );
+                                              }
+
+                                              return (
+                                                <Input
+                                                  value={String(rule.value)}
+                                                  onChange={(e) =>
+                                                    updateValue(e.target.value)
+                                                  }
+                                                  placeholder="Expected answer"
+                                                />
+                                              );
+                                            })()}
+                                          </div>
+
+                                          <div className="mt-2 flex justify-end">
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                updateRules(
+                                                  rules.filter(
+                                                    (_, index) =>
+                                                      index !== ruleIndex,
+                                                  ),
+                                                )
+                                              }
+                                              className="text-xs text-red-600 hover:text-red-700"
+                                            >
+                                              Remove condition
+                                            </button>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+
+                                  <div className="mt-3 flex flex-wrap gap-2">
+                                    {!condition && (
+                                      <Button
+                                        disabled={
+                                          previousQuestions.length === 0
+                                        }
+                                        onClick={addRule}
+                                      >
+                                        <Plus size={14} />
+                                        Add condition
+                                      </Button>
+                                    )}
+
+                                    {condition && (
+                                      <Button
+                                        variant="secondary"
+                                        disabled={
+                                          rules.length >=
+                                          previousQuestions.length
+                                        }
+                                        onClick={addRule}
+                                      >
+                                        <Plus size={14} />
+                                        Add another condition
+                                      </Button>
+                                    )}
+                                  </div>
+
+                                  <p className="mt-2 text-[11px] text-muted">
+                                    {condition?.logic === "or"
+                                      ? "The question appears when at least one condition matches."
+                                      : "The question appears only when all conditions match."}
+                                  </p>
+                                </>
+                              );
+                            })()}
                           </div>
-
-                          <p className="mt-2 text-[11px] text-muted">
-                            The question appears only when the selected
-                            earlier question matches this condition.
-                          </p>
-                        </div>
+                        )}
                       </div>
                     );
                   })}
@@ -603,7 +1167,9 @@ export default function NewQuestionnaire() {
               <li>Move questions between sections using the selector.</li>
               <li>Conditions can reference earlier questions.</li>
               <li>Required questions are validated when suppliers submit.</li>
-              <li>Published questionnaires should remain immutable once assigned.</li>
+              <li>
+                Published questionnaires should remain immutable once assigned.
+              </li>
             </ul>
           </Card>
 

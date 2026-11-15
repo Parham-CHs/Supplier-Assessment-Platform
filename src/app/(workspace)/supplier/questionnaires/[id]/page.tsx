@@ -13,17 +13,51 @@ import {
 import { ArrowLeft, Save, Send, ChevronLeft, ChevronRight } from "lucide-react";
 
 type SectionCondition = {
-  dependsOn: string;
-  operator: string;
-  value: string | number | boolean;
+  logic: "and" | "or";
+  rules: {
+    dependsOn: string;
+    operator: string;
+    value: string | number | boolean;
+  }[];
 };
 
-function matchesCondition(
-  condition: SectionCondition | undefined,
+// function matchesCondition(
+//   condition: SectionCondition | undefined,
+//   answers: Record<string, unknown>,
+// ) {
+//   if (!condition) return true;
+
+//   const actual = answers[condition.dependsOn];
+//   const expected = String(condition.value);
+
+//   if (actual === undefined || actual === null) return false;
+
+//   switch (condition.operator) {
+//     case "equals":
+//       return String(actual) === expected;
+
+//     case "not_equals":
+//       return String(actual) !== expected;
+
+//     case "contains":
+//       return Array.isArray(actual)
+//         ? actual.map(String).includes(expected)
+//         : String(actual).includes(expected);
+
+//     case "greater_than":
+//       return Number(actual) > Number(condition.value);
+
+//     case "less_than":
+//       return Number(actual) < Number(condition.value);
+
+//     default:
+//       return false;
+//   }
+// }
+function matchesConditionRule(
+  condition: SectionCondition["rules"][number],
   answers: Record<string, unknown>,
 ) {
-  if (!condition) return true;
-
   const actual = answers[condition.dependsOn];
   const expected = String(condition.value);
 
@@ -50,6 +84,17 @@ function matchesCondition(
     default:
       return false;
   }
+}
+
+function matchesCondition(
+  condition: SectionCondition | undefined,
+  answers: Record<string, unknown>,
+) {
+  if (!condition || condition.rules.length === 0) return true;
+
+  return condition.logic === "and"
+    ? condition.rules.every((rule) => matchesConditionRule(rule, answers))
+    : condition.rules.some((rule) => matchesConditionRule(rule, answers));
 }
 
 export default function AnswerQuestionnaire() {

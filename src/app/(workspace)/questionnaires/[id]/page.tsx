@@ -31,8 +31,11 @@ export default function QuestionnaireDetail() {
                 {x.required ? "Required" : "Optional"}
                 {x.condition && (
                   <span>
-                    · Conditional on {x.condition.dependsOn}{" "}
-                    {x.condition.operator} {String(x.condition.value)}
+                    {/* · Conditional on {x.condition.dependsOn}{" "}
+                    {x.condition.operator} {String(x.condition.value)} */}
+                    · Conditional ({x.condition.logic.toUpperCase()}):{" "}
+                    {x.condition.rules.length} rule
+                    {x.condition.rules.length === 1 ? "" : "s"}
                   </span>
                 )}
               </div>

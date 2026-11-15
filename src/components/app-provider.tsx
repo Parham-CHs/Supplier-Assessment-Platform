@@ -1126,9 +1126,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         condition: question.condition
           ? {
               ...question.condition,
-              dependsOn:
-                questionIdMap.get(question.condition.dependsOn) ??
-                question.condition.dependsOn,
+              rules: question.condition.rules.map((rule) => ({
+                ...rule,
+                dependsOn: questionIdMap.get(rule.dependsOn) ?? rule.dependsOn,
+              })),
             }
           : null,
         position: question.position,
@@ -1373,8 +1374,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     await refresh();
   };
-
-  
 
   const saveResponse = async (
     id: string,

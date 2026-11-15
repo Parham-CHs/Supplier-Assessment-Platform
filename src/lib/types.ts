@@ -7,6 +7,7 @@ export type QuestionType =
   | "multiple_choice"
   | "number"
   | "date"
+  | "time"
   | "rating"
   | "file";
 export type Operator =
@@ -15,10 +16,22 @@ export type Operator =
   | "contains"
   | "greater_than"
   | "less_than";
-export type Condition = {
+
+  
+// export type Condition = {
+//   dependsOn: string;
+//   operator: Operator;
+//   value: string | number | boolean;
+// };
+export type ConditionRule = {
   dependsOn: string;
   operator: Operator;
   value: string | number | boolean;
+};
+
+export type Condition = {
+  logic: "and" | "or";
+  rules: ConditionRule[];
 };
 // export type Question = {
 //   id: string;
