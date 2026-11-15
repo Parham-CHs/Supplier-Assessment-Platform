@@ -1539,7 +1539,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .normalize("NFKD")
       .replace(/[^a-zA-Z0-9._-]/g, "_")
       .slice(-120);
-    const path = `${assignmentId}/${questionId}/${crypto.randomUUID()}-${safeName}`;
+    const path = `${assignmentId}/${questionId}/${generateId()}-${safeName}`;
     const { error: uploadError } = await supabase.storage
       .from("supplier-evidence")
       .upload(path, file, { contentType, upsert: false });
