@@ -43,4 +43,4 @@ The demo role switcher is only available when Supabase is not configured. In Sup
 
 ## Not yet connected
 
-Supplier/product creation is connected; edit/archive workflows, supplier-user invitation management, email notifications, private Storage uploads for evidence files, and production deployment hardening remain follow-up work. The current environment could not download npm packages during integration, so run `npm install`, `npm run typecheck` and `npm run build` locally before submission.
+Supplier/product creation, product editing and supplier-product assignment are connected. Supplier edit/archive workflows, supplier-user invitation management, email notifications and production deployment hardening remain follow-up work. The current environment could not download npm packages during integration, so run `npm install`, `npm run typecheck` and `npm run build` locally before submission.

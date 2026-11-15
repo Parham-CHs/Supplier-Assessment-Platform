@@ -47,6 +47,18 @@ type ContextValue = {
     sku: string;
     supplierIds: string[];
   }) => Promise<void>;
+  updateProduct: (
+    id: string,
+    input: { name: string; category: string; sku: string },
+  ) => Promise<void>;
+  assignProductToSupplier: (
+    supplierId: string,
+    productId: string,
+  ) => Promise<void>;
+  removeProductFromSupplier: (
+    supplierId: string,
+    productId: string,
+  ) => Promise<void>;
   addQuestionnaire: (q: Questionnaire) => Promise<void>;
   updateQuestionnaire: (q: Questionnaire) => Promise<void>;
   createAssignment: (input: {
