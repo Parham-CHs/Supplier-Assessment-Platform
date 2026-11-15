@@ -1,38 +1,56 @@
+
 "use client";
+
+import { useState, useEffect } from "react";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 import { useApp } from "./app-provider";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { Menu } from "lucide-react";
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { role, loading, error, mode } = useApp();
   const path = usePathname();
   const router = useRouter();
-  const isSupplierRoute = path === "/supplier" || path.startsWith("/supplier/");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const isSupplierRoute =
+    path === "/supplier" || path.startsWith("/supplier/");
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [path]);
+
   useEffect(() => {
     if (loading) return;
+
     if (
       mode === "supabase" &&
       !error &&
       role === "supplier_user" &&
       !isSupplierRoute &&
       path !== "/notifications"
-    )
+    ) {
       router.replace("/supplier");
+    }
+
     if (
       mode === "supabase" &&
       !error &&
       role !== "supplier_user" &&
       isSupplierRoute
-    )
+    ) {
       router.replace("/dashboard");
+    }
   }, [role, path, router, loading, error, mode, isSupplierRoute]);
+
   if (loading)
     return (
       <div className="grid min-h-screen place-items-center text-sm text-muted">
         Loading your secure workspace…
       </div>
     );
+
   if (mode === "supabase" && error)
     return (
       <div className="grid min-h-screen place-items-center p-6">
@@ -47,11 +65,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     );
+
   return (
     <div>
-      <Sidebar />
+      <Sidebar
+        mobileOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+      />
+
       <div className="min-h-screen lg:pl-64">
+        {/* Mobile navigation button */}
+        <div className="flex items-center gap-3 border-b border-line bg-white px-5 py-3 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            aria-label="Open navigation menu"
+            aria-expanded={mobileMenuOpen}
+            className="rounded-lg p-2 text-ink transition hover:bg-gray-100"
+          >
+            <Menu size={22} />
+          </button>
+
+          <span className="font-bold tracking-tight">SupplyScope</span>
+        </div>
+
         <Topbar />
+
         <main className="mx-auto max-w-[1500px] px-5 py-7 lg:px-8">
           {children}
         </main>
