@@ -171,6 +171,17 @@ export default function NewQuestionnaire() {
       return;
     }
 
+    if (
+      questions.some(
+        (question) =>
+          ["single_choice", "multiple_choice"].includes(question.type) &&
+          question.options.filter((option) => option.trim()).length < 2,
+      )
+    ) {
+      setSaveError("Each choice question needs at least two options.");
+      return;
+    }
+
     setSaving(true);
     setSaveError("");
 
@@ -740,22 +751,66 @@ export default function NewQuestionnaire() {
                           </label>
                         </div>
 
-                        {["single_choice", "multiple_choice"].includes(
+                        { ["single_choice", "multiple_choice"].includes(
                           question.type,
                         ) && (
                           <div className="mt-3">
-                            <Label>Options (comma separated)</Label>
-                            <Input
-                              value={question.options.join(", ")}
-                              onChange={(e) =>
+                            <Label>Options</Label>
+                            <div className="space-y-2">
+                              {question.options.map((option, optionIndex) => (
+                                <div
+                                  key={`${question.id}-option-${optionIndex}`}
+                                  className="flex items-center gap-2"
+                                >
+                                  <Input
+                                    value={option}
+                                    aria-label={`Option ${optionIndex + 1}`}
+                                    placeholder={`Option ${optionIndex + 1}`}
+                                    onChange={(event) =>
+                                      updateQuestion(question.id, {
+                                        options: question.options.map(
+                                          (currentOption, index) =>
+                                            index === optionIndex
+                                              ? event.target.value
+                                              : currentOption,
+                                        ),
+                                      })
+                                    }
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    aria-label={`Remove option ${optionIndex + 1}`}
+                                    disabled={question.options.length <= 2}
+                                    onClick={() =>
+                                      updateQuestion(question.id, {
+                                        options: question.options.filter(
+                                          (_, index) => index !== optionIndex,
+                                        ),
+                                      })
+                                    }
+                                  >
+                                    <Trash2 size={16} />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              className="mt-2"
+                              onClick={() =>
                                 updateQuestion(question.id, {
-                                  options: e.target.value
-                                    .split(",")
-                                    .map((value) => value.trim())
-                                    .filter(Boolean),
+                                  options: [
+                                    ...question.options,
+                                    `Option ${question.options.length + 1}`,
+                                  ],
                                 })
                               }
-                            />
+                            >
+                              <Plus size={15} />
+                              Add option
+                            </Button>
                           </div>
                         )}
 
